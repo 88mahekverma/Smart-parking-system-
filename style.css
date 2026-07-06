@@ -424,39 +424,113 @@ footer p{
 }
 
 /* ===========================
-   RESPONSIVE
+   RESPONSIVE DESIGN
 =========================== */
 
-@media(max-width:768px){
+@media (max-width: 992px){
+
+.navbar{
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:15px;
+}
+
+.nav-links{
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:15px;
+}
+
+.hero h1{
+    font-size:42px;
+}
+
+.hero p{
+    font-size:18px;
+}
+
+section{
+    padding:70px 5%;
+}
+
+}
+
+@media (max-width:768px){
 
 .navbar{
     flex-direction:column;
-    gap:20px;
 }
 
 .nav-links{
     flex-direction:column;
-    align-items:center;
+    width:100%;
+    text-align:center;
+}
+
+.hero{
+    height:auto;
+    min-height:100vh;
+    padding:120px 20px 60px;
 }
 
 .hero h1{
-    font-size:38px;
+    font-size:34px;
 }
 
 .hero p{
-    font-size:17px;
+    font-size:16px;
 }
 
 .hero-buttons{
     flex-direction:column;
+    align-items:center;
+}
+
+.about-boxes,
+.feature-grid,
+.parking-grid{
+    grid-template-columns:1fr;
 }
 
 .payment-row{
     grid-template-columns:1fr;
 }
 
-section{
-    padding:70px 6%;
+#bookingForm,
+#paymentForm,
+.contact form{
+    width:100%;
 }
 
 }
+
+@media (max-width:480px){
+
+.logo{
+    font-size:20px;
+}
+
+.hero h1{
+    font-size:28px;
+}
+
+.hero p{
+    font-size:15px;
+}
+
+.btn{
+    width:100%;
+    text-align:center;
+}
+
+.slot{
+    padding:18px;
+    font-size:18px;
+}
+
+section h2{
+    font-size:28px;
+}
+
+}
+   
