@@ -33,8 +33,6 @@ slots.forEach(slot => {
 
         slot.style.border = "4px solid #FFD54F";
 
-        alert("Parking Slot " + selectedSlot + " Selected");
-
     });
 
 });
@@ -49,13 +47,15 @@ bookingForm.addEventListener("submit", function(e){
 
     const name = document.getElementById("name").value;
     const slot = document.getElementById("slot").value;
-// Save booking details (optional)
-localStorage.setItem("customerName", name);
-localStorage.setItem("selectedSlot", slot);
 
-// Scroll to payment section
-document.getElementById("payment").scrollIntoView({
-    behavior: "smooth"
+    // Save details for payment
+    localStorage.setItem("customerName", name);
+    localStorage.setItem("selectedSlot", slot);
+
+    // Move to Payment Section
+    document.getElementById("payment").scrollIntoView({
+        behavior: "smooth"
+    });
 
 });
 
@@ -68,20 +68,20 @@ paymentForm.addEventListener("submit", function(e){
     e.preventDefault();
 
     const customerName = localStorage.getItem("customerName");
-const selectedSlot = localStorage.getItem("selectedSlot");
+    const selectedSlot = localStorage.getItem("selectedSlot");
 
-alert(
-    "Payment Successful!\n\n" +
-    "Booking Confirmed!\n" +
-    "Name: " + customerName +
-    "\nSlot: " + selectedSlot
-);
+    alert(
+        "✅ Payment Successful!\n\n" +
+        "Booking Confirmed!\n\n" +
+        "Name: " + customerName +
+        "\nSlot: " + selectedSlot
+    );
 
-paymentForm.reset();
-bookingForm.reset();
+    paymentForm.reset();
+    bookingForm.reset();
 
-localStorage.removeItem("customerName");
-localStorage.removeItem("selectedSlot");
+    localStorage.removeItem("customerName");
+    localStorage.removeItem("selectedSlot");
 
 });
 
