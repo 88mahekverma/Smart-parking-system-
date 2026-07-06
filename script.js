@@ -1,19 +1,20 @@
-// ==============================
+// =====================================
 // SMART PARKING SYSTEM
-// script.js (Part 3A)
-// ==============================
+// script.js
+// =====================================
 
-// Mobile Menu
+// ---------- MOBILE MENU ----------
 
 const menuBtn = document.querySelector(".menu-btn");
 const navLinks = document.querySelector(".nav-links");
 
-menuBtn.addEventListener("click", () => {
-    navLinks.classList.toggle("active");
-});
-// ==============================
-// Parking Slot Selection
-// ==============================
+if (menuBtn) {
+    menuBtn.addEventListener("click", () => {
+        navLinks.classList.toggle("active");
+    });
+}
+
+// ---------- PARKING SLOT SELECTION ----------
 
 const slots = document.querySelectorAll(".slot.available");
 const slotSelect = document.getElementById("slot");
@@ -22,23 +23,23 @@ slots.forEach(slot => {
 
     slot.addEventListener("click", () => {
 
-        const slotNumber = slot.querySelector("h3").innerText;
+        const selectedSlot = slot.querySelector("h3").innerText;
 
-        slotSelect.value = slotNumber;
+        slotSelect.value = selectedSlot;
 
         slots.forEach(s => {
             s.style.border = "none";
         });
 
-        slot.style.border = "4px solid yellow";
+        slot.style.border = "4px solid #FFD54F";
+
+        alert("Parking Slot " + selectedSlot + " Selected");
 
     });
 
 });
 
-// ==============================
-// Reservation Form
-// ==============================
+// ---------- RESERVATION FORM ----------
 
 const bookingForm = document.getElementById("bookingForm");
 
@@ -47,25 +48,19 @@ bookingForm.addEventListener("submit", function(e){
     e.preventDefault();
 
     const name = document.getElementById("name").value;
-
     const slot = document.getElementById("slot").value;
 
     alert(
         "Reservation Successful!\n\n" +
-        "Customer: " + name +
-        "\nParking Slot: " + slot
+        "Name: " + name +
+        "\nSlot: " + slot
     );
-
-    localStorage.setItem("customerName", name);
-    localStorage.setItem("parkingSlot", slot);
 
     bookingForm.reset();
 
 });
 
-// ==============================
-// Payment Form
-// ==============================
+// ---------- PAYMENT FORM ----------
 
 const paymentForm = document.getElementById("paymentForm");
 
@@ -73,8 +68,22 @@ paymentForm.addEventListener("submit", function(e){
 
     e.preventDefault();
 
-    alert("Payment Successful!\n\nThank you for choosing Smart Parking.");
+    alert("Payment Successful!\n\nThank you for using Smart Parking System.");
 
     paymentForm.reset();
+
+});
+
+// ---------- CONTACT FORM ----------
+
+const contactForm = document.querySelector(".contact form");
+
+contactForm.addEventListener("submit", function(e){
+
+    e.preventDefault();
+
+    alert("Your message has been sent successfully.");
+
+    contactForm.reset();
 
 });
