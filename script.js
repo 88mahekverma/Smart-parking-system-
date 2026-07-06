@@ -11,7 +11,6 @@ const navLinks = document.querySelector(".nav-links");
 menuBtn.addEventListener("click", () => {
     navLinks.classList.toggle("active");
 });
-
 // ==============================
 // Parking Slot Selection
 // ==============================
@@ -23,7 +22,7 @@ slots.forEach(slot => {
 
     slot.addEventListener("click", () => {
 
-        let slotNumber = slot.innerText.split("\n")[0];
+        const slotNumber = slot.querySelector("h3").innerText;
 
         slotSelect.value = slotNumber;
 
