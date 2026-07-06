@@ -233,3 +233,211 @@ User information remains protected and encrypted.
 </section>
 
 <!-- Continue in Part 1B -->
+<!-- ================= PARKING SECTION ================= -->
+
+<section id="parking" class="parking">
+
+<h2>Available Parking Slots</h2>
+
+<div class="parking-grid">
+
+<div class="slot available">A1<br><span>Available</span></div>
+<div class="slot booked">A2<br><span>Booked</span></div>
+<div class="slot available">A3<br><span>Available</span></div>
+<div class="slot available">A4<br><span>Available</span></div>
+
+<div class="slot booked">B1<br><span>Booked</span></div>
+<div class="slot available">B2<br><span>Available</span></div>
+<div class="slot available">B3<br><span>Available</span></div>
+<div class="slot booked">B4<br><span>Booked</span></div>
+
+<div class="slot available">C1<br><span>Available</span></div>
+<div class="slot available">C2<br><span>Available</span></div>
+<div class="slot booked">C3<br><span>Booked</span></div>
+<div class="slot available">C4<br><span>Available</span></div>
+
+</div>
+
+</section>
+
+<!-- ================= RESERVATION ================= -->
+
+<section id="reservation" class="reservation">
+
+<h2>Reserve Your Parking Slot</h2>
+
+<form id="bookingForm">
+
+<input
+type="text"
+id="name"
+placeholder="Full Name"
+required>
+
+<input
+type="email"
+id="email"
+placeholder="Email Address"
+required>
+
+<input
+type="tel"
+id="phone"
+placeholder="Phone Number"
+required>
+
+<select id="vehicle">
+
+<option>Car</option>
+<option>Bike</option>
+<option>SUV</option>
+
+</select>
+
+<select id="slot">
+
+<option>A1</option>
+<option>A3</option>
+<option>A4</option>
+<option>B2</option>
+<option>B3</option>
+<option>C1</option>
+<option>C2</option>
+<option>C4</option>
+
+</select>
+
+<input
+type="date"
+id="date"
+required>
+
+<input
+type="time"
+id="time"
+required>
+
+<button type="submit">
+
+Reserve Parking
+
+</button>
+
+</form>
+
+</section>
+
+<!-- ================= PAYMENT ================= -->
+
+<section id="payment" class="payment">
+
+<h2>Online Payment</h2>
+
+<form id="paymentForm">
+
+<input
+type="text"
+placeholder="Card Holder Name"
+required>
+
+<input
+type="text"
+placeholder="Card Number"
+maxlength="16"
+required>
+
+<div class="payment-row">
+
+<input
+type="text"
+placeholder="MM/YY"
+required>
+
+<input
+type="password"
+placeholder="CVV"
+maxlength="3"
+required>
+
+</div>
+
+<select>
+
+<option>Credit Card</option>
+
+<option>Debit Card</option>
+
+<option>UPI</option>
+
+<option>Net Banking</option>
+
+</select>
+
+<button type="submit">
+
+Pay ₹100
+
+</button>
+
+</form>
+
+</section>
+
+<!-- ================= CONTACT ================= -->
+
+<section id="contact" class="contact">
+
+<h2>Contact Us</h2>
+
+<form>
+
+<input
+type="text"
+placeholder="Your Name"
+required>
+
+<input
+type="email"
+placeholder="Email"
+required>
+
+<textarea
+rows="6"
+placeholder="Write your message"></textarea>
+
+<button>
+
+Send Message
+
+</button>
+
+</form>
+
+</section>
+
+<!-- ================= FOOTER ================= -->
+
+<footer>
+
+<h3>Smart Parking System</h3>
+
+<p>
+
+Fast • Secure • Smart Parking Experience
+
+</p>
+
+<p>
+
+© 2026 Smart Parking System.
+All Rights Reserved.
+
+</p>
+
+</footer>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
