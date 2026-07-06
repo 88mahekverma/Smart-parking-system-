@@ -254,6 +254,84 @@ section h2{
 .box h3{
     margin-bottom:15px;
 }
+.parking{
+    background:#eef5ff;
+    text-align:center;
+}
+
+.parking-text{
+    margin-bottom:35px;
+    color:#666;
+}
+
+.parking-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:25px;
+}
+
+.slot{
+    background:#fff;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 10px 25px rgba(0,0,0,.1);
+    transition:.3s;
+}
+
+.slot:hover{
+    transform:translateY(-8px);
+}
+
+.slot h3{
+    margin-bottom:15px;
+}
+
+.slot i{
+    font-size:45px;
+    margin:15px 0;
+}
+
+.available i{
+    color:#28a745;
+}
+
+.occupied i{
+    color:#dc3545;
+}
+
+.reserved i{
+    color:#ff9800;
+}
+
+.slot p{
+    margin:15px 0;
+    font-weight:600;
+}
+
+.slot button{
+    border:none;
+    padding:12px 20px;
+    border-radius:30px;
+    color:white;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.available button{
+    background:#28a745;
+}
+
+.occupied button{
+    background:#dc3545;
+}
+
+.reserved button{
+    background:#ff9800;
+}
+
+.slot button:disabled{
+    cursor:not-allowed;
+}
 
 /* ================= FEATURES ================= */
 
