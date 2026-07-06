@@ -49,14 +49,13 @@ bookingForm.addEventListener("submit", function(e){
 
     const name = document.getElementById("name").value;
     const slot = document.getElementById("slot").value;
+// Save booking details (optional)
+localStorage.setItem("customerName", name);
+localStorage.setItem("selectedSlot", slot);
 
-    alert(
-        "Reservation Successful!\n\n" +
-        "Name: " + name +
-        "\nSlot: " + slot
-    );
-
-    bookingForm.reset();
+// Scroll to payment section
+document.getElementById("payment").scrollIntoView({
+    behavior: "smooth"
 
 });
 
@@ -68,9 +67,21 @@ paymentForm.addEventListener("submit", function(e){
 
     e.preventDefault();
 
-    alert("Payment Successful!\n\nThank you for using Smart Parking System.");
+    const customerName = localStorage.getItem("customerName");
+const selectedSlot = localStorage.getItem("selectedSlot");
 
-    paymentForm.reset();
+alert(
+    "Payment Successful!\n\n" +
+    "Booking Confirmed!\n" +
+    "Name: " + customerName +
+    "\nSlot: " + selectedSlot
+);
+
+paymentForm.reset();
+bookingForm.reset();
+
+localStorage.removeItem("customerName");
+localStorage.removeItem("selectedSlot");
 
 });
 
