@@ -1,13 +1,12 @@
 /* =========================================================
-   SMARTPARK — SMART PARKING SYSTEM
-   Professional Responsive UI
-   Mobile + Tablet + Desktop
-========================================================= */
+   SMARTPARK
+   Professional Responsive Website Styles
+   ========================================================= */
 
 
 /* =========================================================
    1. RESET & GLOBAL
-========================================================= */
+   ========================================================= */
 
 * {
     margin: 0;
@@ -22,7 +21,7 @@ html {
 
 body {
     font-family: "Inter", sans-serif;
-    background: #f6f8fc;
+    background: #f7f9fc;
     color: #172033;
     line-height: 1.6;
     overflow-x: hidden;
@@ -42,11 +41,6 @@ a {
     color: inherit;
 }
 
-img {
-    max-width: 100%;
-    display: block;
-}
-
 .hidden {
     display: none !important;
 }
@@ -54,47 +48,64 @@ img {
 
 /* =========================================================
    2. NAVBAR
-========================================================= */
+   ========================================================= */
 
 .navbar {
     width: 100%;
-    height: 72px;
-    padding: 0 clamp(18px, 6vw, 90px);
-
+    min-height: 74px;
+    padding: 0 7%;
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    background: rgba(255, 255, 255, 0.97);
+    border-bottom: 1px solid #e8edf5;
 
     position: sticky;
     top: 0;
     z-index: 1000;
 
-    background: rgba(255, 255, 255, 0.94);
-    border-bottom: 1px solid #e8edf5;
-
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
+
+
+/* Logo */
 
 .logo {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 10px;
 
-    font-size: 1.25rem;
+    font-size: 1.45rem;
     font-weight: 800;
     color: #172033;
+
     white-space: nowrap;
 }
 
 .logo i {
-    color: #2563eb;
-    font-size: 1.65rem;
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: #2563eb;
+    color: white;
+
+    font-size: 1.25rem;
 }
 
 .logo-highlight {
     color: #2563eb;
 }
+
+
+/* Navigation */
 
 .navbar nav {
     display: flex;
@@ -103,26 +114,41 @@ img {
 }
 
 .navbar nav a {
-    color: #596579;
+    color: #566176;
     font-size: 0.9rem;
     font-weight: 600;
-    transition: 0.2s ease;
+
+    transition: 0.25s ease;
 }
 
 .navbar nav a:hover {
     color: #2563eb;
 }
 
+
+/* Login button */
+
 .nav-login-btn {
     border: none;
+
     background: #2563eb;
     color: white;
 
-    padding: 10px 19px;
-    border-radius: 9px;
+    padding: 11px 19px;
+
+    border-radius: 10px;
 
     font-weight: 700;
-    transition: 0.2s ease;
+    font-size: 0.88rem;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    box-shadow: 0 7px 18px rgba(37, 99, 235, 0.18);
+
+    transition: 0.25s ease;
 }
 
 .nav-login-btn:hover {
@@ -130,30 +156,36 @@ img {
     transform: translateY(-1px);
 }
 
+
+/* Mobile menu */
+
 .menu-btn {
     display: none;
 
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
 
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border: 1px solid #e1e7f0;
+    border-radius: 11px;
 
     background: white;
     color: #172033;
 
-    font-size: 1.15rem;
+    font-size: 1.35rem;
+
+    align-items: center;
+    justify-content: center;
 }
 
 
 /* =========================================================
    3. HERO
-========================================================= */
+   ========================================================= */
 
 .hero {
     min-height: 650px;
 
-    padding: 90px clamp(20px, 8vw, 120px);
+    padding: 90px 8%;
 
     display: flex;
     align-items: center;
@@ -163,9 +195,9 @@ img {
 
     background:
         radial-gradient(
-            circle at 85% 20%,
-            rgba(37, 99, 235, 0.14),
-            transparent 32%
+            circle at 82% 20%,
+            rgba(37, 99, 235, 0.13),
+            transparent 30%
         ),
         linear-gradient(
             135deg,
@@ -187,13 +219,15 @@ img {
 
     border-radius: 30px;
 
-    background: #e8f0ff;
+    background: #e7f0ff;
     color: #2563eb;
 
-    font-size: 0.75rem;
+    font-size: 0.76rem;
     font-weight: 800;
 
-    margin-bottom: 20px;
+    letter-spacing: 0.5px;
+
+    margin-bottom: 22px;
 }
 
 .live-dot {
@@ -203,6 +237,7 @@ img {
     display: inline-block;
 
     border-radius: 50%;
+
     background: #22c55e;
 
     box-shadow:
@@ -210,14 +245,15 @@ img {
 }
 
 .hero h1 {
-    font-size: clamp(2.7rem, 6vw, 5.2rem);
-    line-height: 1.02;
+    font-size: clamp(3rem, 6vw, 5.3rem);
+
+    line-height: 1.04;
 
     letter-spacing: -3px;
 
     color: #111827;
 
-    margin-bottom: 22px;
+    margin-bottom: 24px;
 }
 
 .hero h1 span {
@@ -232,33 +268,41 @@ img {
 
     font-size: 1.05rem;
 
-    margin-bottom: 30px;
+    margin-bottom: 32px;
 }
+
+
+/* Hero buttons */
 
 .hero-buttons {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+
+    flex-wrap: wrap;
 }
 
 .primary-btn,
 .secondary-btn {
-    min-height: 50px;
+    min-height: 52px;
 
-    padding: 0 23px;
+    padding: 0 24px;
 
-    border-radius: 10px;
+    border-radius: 11px;
+
+    font-weight: 700;
 
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    gap: 8px;
+    gap: 9px;
 
-    font-weight: 700;
-
-    transition: 0.2s ease;
+    transition: 0.25s ease;
 }
+
+
+/* Main login */
 
 .primary-btn {
     border: none;
@@ -275,11 +319,15 @@ img {
     transform: translateY(-2px);
 }
 
+
+/* Secondary */
+
 .secondary-btn {
     border: 1px solid #d8e0ed;
 
-    background: white;
     color: #344054;
+
+    background: white;
 }
 
 .secondary-btn:hover {
@@ -287,8 +335,13 @@ img {
     color: #2563eb;
 }
 
+
+/* Hero visual */
+
 .hero-visual {
-    width: min(390px, 100%);
+    width: 390px;
+
+    flex-shrink: 0;
 
     display: flex;
     justify-content: center;
@@ -317,7 +370,7 @@ img {
 
     color: #aab4c5;
 
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     font-weight: 700;
 }
 
@@ -325,6 +378,10 @@ img {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.hero-card-top .live-dot {
+    background: #22c55e;
 }
 
 .hero-car-icon {
@@ -340,6 +397,7 @@ img {
     justify-content: center;
 
     background: rgba(37, 99, 235, 0.18);
+
     color: #60a5fa;
 
     font-size: 2.7rem;
@@ -347,6 +405,7 @@ img {
 
 .hero-parking-card h3 {
     text-align: center;
+
     font-size: 1.35rem;
 }
 
@@ -355,7 +414,7 @@ img {
 
     color: #9ca8bb;
 
-    font-size: 0.82rem;
+    font-size: 0.85rem;
 
     margin: 5px 0 22px;
 }
@@ -370,6 +429,7 @@ img {
 
 .hero-card-info {
     display: grid;
+
     grid-template-columns: repeat(3, 1fr);
 
     text-align: center;
@@ -377,30 +437,32 @@ img {
 
 .hero-card-info strong {
     display: block;
+
     font-size: 1.5rem;
 }
 
 .hero-card-info span {
     color: #9ca8bb;
-    font-size: 0.7rem;
+
+    font-size: 0.72rem;
 }
 
 
 /* =========================================================
    4. COMMON SECTIONS
-========================================================= */
+   ========================================================= */
 
 .parking-section,
 .how-section,
 .about-section,
 .contact-section {
-    padding: 90px clamp(20px, 8vw, 110px);
+    padding: 95px 8%;
 }
 
 .section-heading {
-    max-width: 700px;
+    max-width: 720px;
 
-    margin: 0 auto 42px;
+    margin: 0 auto 45px;
 
     text-align: center;
 }
@@ -408,51 +470,55 @@ img {
 .section-label {
     color: #2563eb;
 
-    font-size: 0.72rem;
+    font-size: 0.76rem;
+
     font-weight: 800;
 
-    letter-spacing: 1.5px;
+    letter-spacing: 1.3px;
 }
 
 .section-heading h2 {
-    margin: 9px 0 12px;
-
-    color: #111827;
+    margin: 10px 0 12px;
 
     font-size: clamp(2rem, 4vw, 3rem);
-    line-height: 1.12;
+
+    line-height: 1.15;
+
+    color: #111827;
 }
 
 .section-heading p {
     color: #667085;
-    font-size: 0.95rem;
 }
 
 
 /* =========================================================
    5. CITY SELECTOR
-========================================================= */
+   ========================================================= */
 
 .city-selector {
-    max-width: 500px;
+    max-width: 520px;
 
-    margin: 0 auto 22px;
+    margin: 0 auto 25px;
 
-    display: flex;
-    gap: 10px;
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 12px;
 }
 
 .city-btn {
-    flex: 1;
+    min-height: 52px;
 
-    min-height: 48px;
-
-    padding: 10px 18px;
+    padding: 13px 20px;
 
     border: 1px solid #dce3ee;
-    border-radius: 11px;
+
+    border-radius: 12px;
 
     background: white;
+
     color: #667085;
 
     font-weight: 700;
@@ -461,18 +527,20 @@ img {
     align-items: center;
     justify-content: center;
 
-    gap: 8px;
+    gap: 9px;
 
-    transition: 0.2s ease;
+    transition: 0.25s ease;
 }
 
 .city-btn:hover {
     border-color: #2563eb;
+
     color: #2563eb;
 }
 
 .city-btn.active {
     background: #2563eb;
+
     border-color: #2563eb;
 
     color: white;
@@ -481,8 +549,12 @@ img {
         0 8px 20px rgba(37, 99, 235, 0.2);
 }
 
+
+/* Selected city */
+
 .selected-city {
     display: flex;
+
     align-items: center;
     justify-content: center;
 
@@ -492,7 +564,7 @@ img {
 
     margin-bottom: 25px;
 
-    font-size: 0.9rem;
+    font-size: 1.15rem;
 }
 
 .selected-city i {
@@ -505,40 +577,43 @@ img {
 
 
 /* =========================================================
-   6. LOGIN INFO
-========================================================= */
+   6. LOGIN INFORMATION
+   ========================================================= */
 
 .info-message {
-    max-width: 1050px;
+    max-width: 1000px;
 
-    margin: 0 auto 24px;
+    margin: 0 auto 25px;
 
-    padding: 15px 18px;
+    padding: 17px 20px;
 
     border: 1px solid #dce7f9;
-    border-radius: 14px;
 
     background: #f1f6ff;
 
+    border-radius: 14px;
+
     display: flex;
+
     align-items: center;
 
-    gap: 13px;
+    gap: 14px;
 }
 
 .info-message-icon {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
 
     flex-shrink: 0;
 
-    border-radius: 11px;
+    border-radius: 12px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
     background: #dce9ff;
+
     color: #2563eb;
 }
 
@@ -547,79 +622,91 @@ img {
 }
 
 .info-message-content strong {
-    display: block;
-
     color: #1d4ed8;
 
-    font-size: 0.9rem;
+    font-size: 0.92rem;
 }
 
 .info-message-content p {
     color: #64748b;
-    font-size: 0.78rem;
+
+    font-size: 0.8rem;
+
+    margin-top: 2px;
 }
 
 .small-btn {
     border: none;
 
-    padding: 9px 15px;
+    background: #2563eb;
+
+    color: white;
+
+    padding: 10px 18px;
 
     border-radius: 9px;
 
-    background: #2563eb;
-    color: white;
-
     font-weight: 700;
+
+    white-space: nowrap;
+
+    transition: 0.25s ease;
+}
+
+.small-btn:hover {
+    background: #1d4ed8;
 }
 
 
 /* =========================================================
    7. PARKING SUMMARY
-========================================================= */
+   ========================================================= */
 
 .parking-summary {
-    max-width: 1050px;
+    max-width: 1100px;
 
-    margin: 0 auto 25px;
+    margin: 0 auto 30px;
 
     display: grid;
+
     grid-template-columns: repeat(4, 1fr);
 
-    gap: 13px;
+    gap: 16px;
 }
 
 .summary-card {
     min-width: 0;
 
-    padding: 18px;
-
-    border: 1px solid #e7ecf4;
-    border-radius: 16px;
-
     background: white;
+
+    border: 1px solid #e8edf5;
+
+    border-radius: 17px;
+
+    padding: 20px;
 
     display: flex;
     align-items: center;
 
-    gap: 12px;
+    gap: 14px;
 
     box-shadow:
-        0 6px 20px rgba(15, 23, 42, 0.04);
+        0 8px 25px rgba(15, 23, 42, 0.04);
 }
 
 .summary-icon {
-    width: 43px;
-    height: 43px;
+    width: 45px;
+    height: 45px;
 
     flex-shrink: 0;
 
-    border-radius: 11px;
+    border-radius: 12px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    font-size: 1rem;
+    font-size: 1.1rem;
 }
 
 .available-card .summary-icon {
@@ -651,9 +738,7 @@ img {
 
     color: #7a8496;
 
-    font-size: 0.72rem;
-
-    white-space: nowrap;
+    font-size: 0.76rem;
 }
 
 .summary-content strong {
@@ -661,7 +746,7 @@ img {
 
     color: #172033;
 
-    font-size: 1.4rem;
+    font-size: 1.45rem;
 
     line-height: 1.2;
 }
@@ -669,26 +754,26 @@ img {
 
 /* =========================================================
    8. PARKING STATUS
-========================================================= */
+   ========================================================= */
 
 .parking-status {
-    max-width: 1050px;
-
-    min-height: 52px;
+    max-width: 1100px;
 
     margin: 0 auto 25px;
 
-    padding: 12px 18px;
+    min-height: 54px;
+
+    padding: 14px 20px;
 
     border-radius: 12px;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
-    gap: 8px;
+    gap: 9px;
 
-    font-size: 0.85rem;
     font-weight: 700;
 
     text-align: center;
@@ -716,47 +801,45 @@ img {
 
 
 /* =========================================================
-   9. SLOT CARDS
-========================================================= */
+   9. PARKING SLOT CARDS
+   ========================================================= */
 
 .slot-container {
-    max-width: 1050px;
+    max-width: 1100px;
 
     margin: 0 auto;
 
     display: grid;
 
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, 1fr);
 
-    gap: 17px;
+    gap: 20px;
 }
 
 .slot-card {
-    min-width: 0;
-
-    padding: 22px;
-
-    border: 1px solid #e5eaf2;
-    border-radius: 18px;
-
     background: white;
 
-    text-align: center;
+    border: 1px solid #e5eaf2;
+
+    border-radius: 20px;
+
+    padding: 25px;
+
+    position: relative;
+
+    overflow: hidden;
+
+    transition: 0.25s ease;
 
     box-shadow:
-        0 7px 22px rgba(15, 23, 42, 0.045);
-
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+        0 8px 25px rgba(15, 23, 42, 0.05);
 }
 
 .slot-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
 
     box-shadow:
-        0 14px 32px rgba(15, 23, 42, 0.08);
+        0 15px 35px rgba(15, 23, 42, 0.09);
 }
 
 .slot-card.available {
@@ -771,19 +854,66 @@ img {
     border-top: 4px solid #ef4444;
 }
 
+.slot-top {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-bottom: 20px;
+}
+
+.slot-number {
+    font-size: 1.1rem;
+
+    font-weight: 800;
+
+    color: #172033;
+}
+
+.slot-status {
+    padding: 6px 10px;
+
+    border-radius: 20px;
+
+    font-size: 0.7rem;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+.slot-card.available .slot-status {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.slot-card.reserved .slot-status {
+    background: #fef3c7;
+    color: #a16207;
+}
+
+.slot-card.occupied .slot-status {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
 .slot-icon {
-    width: 68px;
-    height: 68px;
+    width: 75px;
+    height: 75px;
 
-    margin: 2px auto 14px;
+    margin: 0 auto 20px;
 
-    border-radius: 18px;
+    border-radius: 20px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    font-size: 2rem;
+    font-size: 2.2rem;
 }
 
 .slot-card.available .slot-icon {
@@ -802,66 +932,51 @@ img {
 }
 
 .slot-card h3 {
-    margin-bottom: 8px;
-
-    color: #172033;
+    text-align: center;
 
     font-size: 1rem;
+
+    margin-bottom: 6px;
 }
 
-.slot-status {
-    display: inline-block;
+.slot-card p {
+    text-align: center;
 
-    padding: 5px 11px;
+    color: #7a8496;
 
-    border-radius: 20px;
+    font-size: 0.78rem;
 
-    font-size: 0.68rem;
-    font-weight: 800;
-}
-
-.slot-card.available .slot-status {
-    background: #dcfce7;
-    color: #15803d;
-}
-
-.slot-card.reserved .slot-status {
-    background: #fef3c7;
-    color: #a16207;
-}
-
-.slot-card.occupied .slot-status {
-    background: #fee2e2;
-    color: #b91c1c;
+    margin-bottom: 20px;
 }
 
 .book-slot-btn {
     width: 100%;
 
-    min-height: 44px;
-
-    margin-top: 18px;
+    min-height: 45px;
 
     border: none;
+
+    padding: 12px;
+
     border-radius: 10px;
 
     background: #2563eb;
+
     color: white;
 
-    font-size: 0.85rem;
     font-weight: 700;
 
-    transition: 0.2s ease;
+    transition: 0.25s ease;
 }
 
 .book-slot-btn:hover {
     background: #1d4ed8;
 }
 
-.book-slot-btn:disabled,
-.book-slot-btn.disabled {
-    background: #edf0f4;
-    color: #98a2b3;
+.book-slot-btn:disabled {
+    background: #e5e7eb;
+
+    color: #9ca3af;
 
     cursor: not-allowed;
 }
@@ -869,28 +984,29 @@ img {
 
 /* =========================================================
    10. FULL MESSAGE
-========================================================= */
+   ========================================================= */
 
 .full-message {
     max-width: 500px;
 
-    margin: 28px auto 0;
-
-    padding: 30px 22px;
+    margin: 30px auto 0;
 
     text-align: center;
 
-    border: 1px solid #fee2e2;
-    border-radius: 18px;
+    padding: 35px;
+
+    border-radius: 20px;
 
     background: white;
+
+    border: 1px solid #fee2e2;
 }
 
 .full-icon {
-    width: 58px;
-    height: 58px;
+    width: 60px;
+    height: 60px;
 
-    margin: 0 auto 14px;
+    margin: 0 auto 15px;
 
     border-radius: 50%;
 
@@ -899,128 +1015,129 @@ img {
     justify-content: center;
 
     background: #fee2e2;
+
     color: #dc2626;
 
-    font-size: 1.3rem;
+    font-size: 1.4rem;
 }
 
 .full-message h3 {
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
 
 .full-message p {
     color: #7a8496;
-    font-size: 0.82rem;
+
+    font-size: 0.85rem;
 }
 
 
 /* =========================================================
    11. HOW IT WORKS
-========================================================= */
+   ========================================================= */
 
 .how-section {
     background: white;
 }
 
 .steps-container {
-    max-width: 1050px;
+    max-width: 1100px;
 
     margin: 0 auto;
 
     display: grid;
 
-    grid-template-columns:
-        repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, 1fr);
 
-    gap: 16px;
+    gap: 20px;
 }
 
 .step-card {
     position: relative;
 
-    padding: 27px 20px;
+    padding: 28px 23px;
 
-    border: 1px solid #e7ecf4;
-    border-radius: 17px;
+    border: 1px solid #e8edf5;
 
-    background: white;
+    border-radius: 18px;
+
+    background: #fff;
 
     text-align: center;
 
-    transition: 0.2s ease;
+    transition: 0.25s ease;
 }
 
 .step-card:hover {
     transform: translateY(-3px);
 
     box-shadow:
-        0 12px 30px rgba(15, 23, 42, 0.07);
+        0 12px 28px rgba(15, 23, 42, 0.07);
 }
 
 .step-number {
     position: absolute;
 
-    top: 13px;
-    right: 15px;
+    top: 15px;
+    right: 18px;
 
     color: #dce4f1;
 
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+
     font-weight: 800;
 }
 
 .step-icon {
-    width: 56px;
-    height: 56px;
+    width: 58px;
+    height: 58px;
 
-    margin: 8px auto 17px;
+    margin: 10px auto 18px;
 
-    border-radius: 15px;
+    border-radius: 16px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
     background: #eaf1ff;
+
     color: #2563eb;
 
-    font-size: 1.25rem;
+    font-size: 1.35rem;
 }
 
 .step-card h3 {
-    margin-bottom: 7px;
-
-    font-size: 1rem;
+    margin-bottom: 8px;
 }
 
 .step-card p {
     color: #7a8496;
-    font-size: 0.78rem;
+
+    font-size: 0.8rem;
 }
 
 
 /* =========================================================
    12. ABOUT
-========================================================= */
+   ========================================================= */
 
 .about-section {
     display: grid;
 
-    grid-template-columns:
-        minmax(0, 0.9fr)
-        minmax(0, 1.1fr);
+    grid-template-columns: 0.9fr 1.1fr;
 
-    gap: clamp(40px, 7vw, 90px);
+    gap: 90px;
 
     align-items: center;
 
-    background: #f6f8fc;
+    background: #f7f9fc;
 }
 
 .about-visual {
-    min-height: 420px;
+    min-height: 430px;
 
-    border-radius: 28px;
+    border-radius: 30px;
 
     background:
         radial-gradient(
@@ -1040,37 +1157,38 @@ img {
 }
 
 .about-main-icon {
-    width: 185px;
-    height: 185px;
+    width: 190px;
+    height: 190px;
 
-    border-radius: 43px;
+    border-radius: 45px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
     background: rgba(37, 99, 235, 0.18);
+
     color: #60a5fa;
 
-    font-size: 5.7rem;
+    font-size: 6rem;
 }
 
 .about-floating-card {
     position: absolute;
 
-    right: 22px;
-    bottom: 22px;
+    bottom: 25px;
+    right: 25px;
 
-    padding: 12px 15px;
+    padding: 13px 17px;
 
-    border-radius: 13px;
+    border-radius: 14px;
 
     background: white;
 
     display: flex;
     align-items: center;
 
-    gap: 9px;
+    gap: 10px;
 
     box-shadow:
         0 15px 35px rgba(0, 0, 0, 0.2);
@@ -1086,20 +1204,21 @@ img {
 }
 
 .about-floating-card strong {
-    font-size: 0.78rem;
+    font-size: 0.8rem;
 }
 
 .about-floating-card span {
     color: #7a8496;
-    font-size: 0.68rem;
+
+    font-size: 0.7rem;
 }
 
 .about-content h2 {
-    margin: 10px 0 17px;
+    margin: 10px 0 18px;
 
     font-size: clamp(2rem, 4vw, 3rem);
 
-    line-height: 1.12;
+    line-height: 1.15;
 }
 
 .about-content h2 span {
@@ -1109,9 +1228,7 @@ img {
 .about-content > p {
     color: #667085;
 
-    margin-bottom: 13px;
-
-    font-size: 0.92rem;
+    margin-bottom: 14px;
 }
 
 .about-features {
@@ -1119,18 +1236,20 @@ img {
 
     grid-template-columns: repeat(2, 1fr);
 
-    gap: 12px;
+    gap: 13px;
 
-    margin-top: 23px;
+    margin-top: 25px;
 }
 
 .about-features div {
     display: flex;
+
     align-items: center;
 
-    gap: 8px;
+    gap: 9px;
 
-    font-size: 0.82rem;
+    font-size: 0.85rem;
+
     font-weight: 600;
 }
 
@@ -1141,7 +1260,7 @@ img {
 
 /* =========================================================
    13. CONTACT
-========================================================= */
+   ========================================================= */
 
 .contact-section {
     background: white;
@@ -1154,62 +1273,63 @@ img {
 
     display: grid;
 
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, 1fr);
 
-    gap: 16px;
+    gap: 20px;
 }
 
 .contact-card {
-    padding: 28px 20px;
-
-    border: 1px solid #e7ecf4;
-    border-radius: 17px;
-
     text-align: center;
 
-    transition: 0.2s ease;
+    padding: 30px 22px;
+
+    border: 1px solid #e8edf5;
+
+    border-radius: 18px;
+
+    transition: 0.25s ease;
 }
 
 .contact-card:hover {
     transform: translateY(-3px);
 
     box-shadow:
-        0 12px 30px rgba(15, 23, 42, 0.06);
+        0 12px 28px rgba(15, 23, 42, 0.06);
 }
 
 .contact-icon {
-    width: 53px;
-    height: 53px;
+    width: 55px;
+    height: 55px;
 
-    margin: 0 auto 14px;
+    margin: 0 auto 15px;
 
-    border-radius: 14px;
+    border-radius: 15px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
     background: #eaf1ff;
+
     color: #2563eb;
 }
 
 .contact-card h3 {
-    margin-bottom: 6px;
-
-    font-size: 1rem;
+    margin-bottom: 7px;
 }
 
 .contact-card p {
     color: #7a8496;
 
-    font-size: 0.78rem;
+    font-size: 0.8rem;
+
+    word-break: break-word;
 }
 
 
 /* =========================================================
    14. MODALS
-========================================================= */
+   ========================================================= */
 
 .modal {
     display: none;
@@ -1220,9 +1340,9 @@ img {
 
     z-index: 3000;
 
-    padding: 18px;
+    padding: 20px;
 
-    background: rgba(15, 23, 42, 0.68);
+    background: rgba(15, 23, 42, 0.65);
 
     backdrop-filter: blur(7px);
     -webkit-backdrop-filter: blur(7px);
@@ -1237,16 +1357,18 @@ img {
 
 .modal-content {
     width: 100%;
-    max-width: 440px;
+
+    max-width: 450px;
+
     max-height: 90vh;
 
     overflow-y: auto;
 
     position: relative;
 
-    padding: 32px;
+    padding: 35px;
 
-    border-radius: 21px;
+    border-radius: 22px;
 
     background: white;
 
@@ -1257,37 +1379,44 @@ img {
 .close-modal {
     position: absolute;
 
-    top: 14px;
-    right: 15px;
+    top: 16px;
+    right: 18px;
 
     width: 35px;
     height: 35px;
 
     border: none;
+
     border-radius: 50%;
 
     background: #f2f4f7;
+
     color: #667085;
 
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-icon {
-    width: 60px;
-    height: 60px;
+    width: 62px;
+    height: 62px;
 
-    margin: 0 auto 15px;
+    margin: 0 auto 17px;
 
-    border-radius: 17px;
+    border-radius: 18px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
     background: #eaf1ff;
+
     color: #2563eb;
 
-    font-size: 1.35rem;
+    font-size: 1.4rem;
 }
 
 .booking-icon {
@@ -1303,7 +1432,7 @@ img {
 .modal-content h2 {
     text-align: center;
 
-    font-size: 1.55rem;
+    font-size: 1.65rem;
 
     margin-bottom: 5px;
 }
@@ -1313,29 +1442,30 @@ img {
 
     color: #7a8496;
 
-    font-size: 0.8rem;
+    font-size: 0.82rem;
 
-    margin-bottom: 23px;
+    margin-bottom: 25px;
 }
 
 
 /* =========================================================
-   15. FORM
-========================================================= */
+   15. FORMS
+   ========================================================= */
 
 .input-group {
-    margin-bottom: 15px;
+    margin-bottom: 17px;
 }
 
 .input-group label {
     display: block;
 
-    margin-bottom: 6px;
-
     color: #344054;
 
-    font-size: 0.78rem;
+    font-size: 0.8rem;
+
     font-weight: 700;
+
+    margin-bottom: 7px;
 }
 
 .input-wrapper {
@@ -1351,25 +1481,971 @@ img {
     transform: translateY(-50%);
 
     color: #98a2b3;
+
+    pointer-events: none;
 }
 
 .input-wrapper input {
     width: 100%;
-    height: 47px;
+
+    height: 49px;
 
     padding: 0 42px;
 
     border: 1px solid #d8dee9;
+
     border-radius: 10px;
 
     outline: none;
 
     color: #172033;
+
     background: white;
 
-    font-size: 0.85rem;
+    font-size: 0.9rem;
 
-    transition: 0.2s;
+    transition: 0.2s ease;
 }
 
-.input-wrapper input:focus
+.input-wrapper input:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.password-toggle {
+    position: absolute;
+
+    right: 12px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    border: none;
+
+    background: transparent;
+
+    color: #98a2b3;
+
+    padding: 5px;
+}
+
+.modal-btn {
+    width: 100%;
+
+    min-height: 49px;
+
+    margin-top: 7px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #2563eb;
+
+    color: white;
+
+    font-weight: 700;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 9px;
+
+    transition: 0.25s ease;
+}
+
+.modal-btn:hover {
+    background: #1d4ed8;
+}
+
+.auth-switch {
+    text-align: center;
+
+    margin-top: 20px;
+
+    color: #7a8496;
+
+    font-size: 0.8rem;
+}
+
+.auth-switch button {
+    border: none;
+
+    background: transparent;
+
+    color: #2563eb;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   16. BOOKING
+   ========================================================= */
+
+.booking-details {
+    background: #f7f9fc;
+
+    border-radius: 14px;
+
+    padding: 17px;
+
+    margin-bottom: 20px;
+}
+
+.booking-details div {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 9px 0;
+
+    border-bottom: 1px solid #e7ebf1;
+}
+
+.booking-details div:last-child {
+    border-bottom: none;
+}
+
+.booking-details span {
+    color: #7a8496;
+
+    font-size: 0.78rem;
+}
+
+.booking-details strong {
+    color: #172033;
+
+    font-size: 0.82rem;
+
+    text-align: right;
+
+    word-break: break-word;
+}
+
+
+/* =========================================================
+   17. PAYMENT
+   ========================================================= */
+
+.payment-box {
+    padding: 18px;
+
+    margin-bottom: 18px;
+
+    border-radius: 13px;
+
+    background: #f7f9fc;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+}
+
+.payment-box span {
+    color: #667085;
+}
+
+.payment-box strong {
+    color: #172033;
+
+    font-size: 1.35rem;
+}
+
+
+/* =========================================================
+   18. TOAST
+   ========================================================= */
+
+.toast {
+    position: fixed;
+
+    right: 25px;
+    bottom: 25px;
+
+    z-index: 5000;
+
+    min-width: 270px;
+
+    max-width: calc(100vw - 40px);
+
+    padding: 14px 17px;
+
+    border-radius: 12px;
+
+    background: #172033;
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.18);
+
+    transform: translateY(130px);
+
+    opacity: 0;
+
+    transition: 0.3s ease;
+}
+
+.toast.show {
+    transform: translateY(0);
+
+    opacity: 1;
+}
+
+.toast i {
+    color: #4ade80;
+}
+
+
+/* =========================================================
+   19. FOOTER
+   ========================================================= */
+
+footer {
+    padding: 35px 8% 20px;
+
+    background: #111827;
+
+    color: white;
+}
+
+.footer-content {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 20px;
+
+    padding-bottom: 25px;
+
+    border-bottom: 1px solid #293548;
+}
+
+.footer-logo {
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    font-size: 1.15rem;
+
+    font-weight: 700;
+}
+
+.footer-logo i {
+    color: #60a5fa;
+
+    font-size: 1.5rem;
+}
+
+.footer-logo span {
+    color: #60a5fa;
+}
+
+.footer-content p {
+    color: #98a2b3;
+
+    font-size: 0.8rem;
+}
+
+.footer-bottom {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding-top: 18px;
+
+    color: #7a8496;
+
+    font-size: 0.72rem;
+}
+
+
+/* =========================================================
+   20. TABLET
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+    .navbar {
+        padding: 0 5%;
+    }
+
+    .hero {
+        padding: 75px 6%;
+
+        gap: 40px;
+    }
+
+    .hero-visual {
+        width: 330px;
+    }
+
+    .parking-section,
+    .how-section,
+    .about-section,
+    .contact-section {
+        padding: 80px 6%;
+    }
+
+    .parking-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .slot-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .steps-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .about-section {
+        grid-template-columns: 1fr;
+
+        gap: 50px;
+    }
+
+    .about-visual {
+        min-height: 350px;
+    }
+}
+
+
+/* =========================================================
+   21. MOBILE NAVIGATION
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .navbar {
+        min-height: 68px;
+
+        padding: 0 5%;
+    }
+
+    .logo {
+        font-size: 1.3rem;
+    }
+
+    .logo i {
+        width: 36px;
+        height: 36px;
+
+        font-size: 1.15rem;
+    }
+
+    .menu-btn {
+        display: flex;
+    }
+
+    .navbar nav {
+        display: none;
+
+        position: absolute;
+
+        left: 0;
+        right: 0;
+
+        top: 68px;
+
+        padding: 18px 20px 22px;
+
+        background: white;
+
+        border-bottom: 1px solid #e8edf5;
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 6px;
+
+        box-shadow:
+            0 15px 30px rgba(15, 23, 42, 0.09);
+    }
+
+    .navbar nav.mobile-open {
+        display: flex;
+    }
+
+    .navbar nav a {
+        width: 100%;
+
+        padding: 12px 14px;
+
+        border-radius: 9px;
+    }
+
+    .navbar nav a:hover {
+        background: #f1f6ff;
+    }
+
+    .nav-login-btn {
+        width: 100%;
+
+        min-height: 46px;
+
+        margin-top: 6px;
+
+        font-size: 0.95rem;
+    }
+}
+
+
+/* =========================================================
+   22. MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    /* ---------- GLOBAL ---------- */
+
+    body {
+        font-size: 15px;
+    }
+
+
+    /* ---------- NAVBAR ---------- */
+
+    .navbar {
+        padding: 0 18px;
+    }
+
+
+    /* ---------- HERO ---------- */
+
+    .hero {
+        min-height: auto;
+
+        padding: 55px 20px 60px;
+
+        flex-direction: column;
+
+        text-align: center;
+
+        gap: 45px;
+    }
+
+    .hero-content {
+        width: 100%;
+    }
+
+    .hero-badge {
+        font-size: 0.67rem;
+
+        padding: 7px 11px;
+
+        margin-bottom: 18px;
+    }
+
+    .hero h1 {
+        font-size: clamp(2.55rem, 13vw, 3.5rem);
+
+        line-height: 1.06;
+
+        letter-spacing: -2px;
+
+        margin-bottom: 18px;
+    }
+
+    .hero p {
+        font-size: 0.92rem;
+
+        line-height: 1.65;
+
+        margin-bottom: 25px;
+    }
+
+    .hero-buttons {
+        width: 100%;
+
+        flex-direction: column;
+
+        gap: 10px;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+        width: 100%;
+
+        min-height: 52px;
+    }
+
+    .hero-visual {
+        width: 100%;
+
+        max-width: 360px;
+    }
+
+    .hero-parking-card {
+        padding: 24px;
+
+        transform: none;
+
+        border-radius: 21px;
+    }
+
+    .hero-car-icon {
+        width: 72px;
+        height: 72px;
+
+        margin: 28px auto 16px;
+
+        font-size: 2.2rem;
+    }
+
+    .hero-parking-card h3 {
+        font-size: 1.15rem;
+    }
+
+
+    /* ---------- SECTIONS ---------- */
+
+    .parking-section,
+    .how-section,
+    .about-section,
+    .contact-section {
+        padding: 65px 18px;
+    }
+
+    .section-heading {
+        margin-bottom: 32px;
+    }
+
+    .section-label {
+        font-size: 0.68rem;
+    }
+
+    .section-heading h2 {
+        font-size: 2rem;
+
+        margin-top: 8px;
+    }
+
+    .section-heading p {
+        font-size: 0.9rem;
+    }
+
+
+    /* ---------- CITY ---------- */
+
+    .city-selector {
+        width: 100%;
+
+        grid-template-columns: repeat(2, 1fr);
+
+        gap: 9px;
+    }
+
+    .city-btn {
+        min-height: 50px;
+
+        padding: 10px 8px;
+
+        font-size: 0.86rem;
+    }
+
+    .selected-city {
+        font-size: 1rem;
+
+        margin-bottom: 22px;
+    }
+
+
+    /* ---------- LOGIN INFO ---------- */
+
+    .info-message {
+        padding: 16px;
+
+        align-items: flex-start;
+
+        display: grid;
+
+        grid-template-columns: 42px 1fr;
+
+        gap: 12px;
+    }
+
+    .info-message-content {
+        min-width: 0;
+    }
+
+    .info-message-content strong {
+        font-size: 0.82rem;
+
+        line-height: 1.4;
+
+        display: block;
+    }
+
+    .info-message-content p {
+        font-size: 0.72rem;
+
+        line-height: 1.5;
+    }
+
+    .small-btn {
+        width: 100%;
+
+        grid-column: 1 / -1;
+
+        min-height: 44px;
+
+        margin-top: 2px;
+    }
+
+
+    /* ---------- SUMMARY ---------- */
+
+    .parking-summary {
+        grid-template-columns: repeat(2, 1fr);
+
+        gap: 10px;
+
+        margin-bottom: 20px;
+    }
+
+    .summary-card {
+        min-height: 90px;
+
+        padding: 14px;
+
+        border-radius: 15px;
+
+        gap: 10px;
+    }
+
+    .summary-icon {
+        width: 38px;
+        height: 38px;
+
+        border-radius: 10px;
+
+        font-size: 0.95rem;
+    }
+
+    .summary-content span {
+        font-size: 0.68rem;
+    }
+
+    .summary-content strong {
+        font-size: 1.35rem;
+    }
+
+
+    /* ---------- STATUS ---------- */
+
+    .parking-status {
+        min-height: 52px;
+
+        padding: 12px 14px;
+
+        margin-bottom: 20px;
+
+        font-size: 0.82rem;
+    }
+
+
+    /* ---------- SLOTS ---------- */
+
+    .slot-container {
+        grid-template-columns: 1fr;
+
+        gap: 14px;
+    }
+
+    .slot-card {
+        padding: 20px;
+
+        border-radius: 17px;
+    }
+
+    .slot-top {
+        margin-bottom: 15px;
+    }
+
+    .slot-icon {
+        width: 65px;
+        height: 65px;
+
+        margin-bottom: 15px;
+
+        border-radius: 17px;
+
+        font-size: 1.9rem;
+    }
+
+    .slot-card p {
+        margin-bottom: 16px;
+    }
+
+
+    /* ---------- FULL MESSAGE ---------- */
+
+    .full-message {
+        padding: 27px 20px;
+
+        margin-top: 20px;
+    }
+
+
+    /* ---------- HOW IT WORKS ---------- */
+
+    .steps-container {
+        grid-template-columns: 1fr;
+
+        gap: 13px;
+    }
+
+    .step-card {
+        padding: 23px 20px;
+    }
+
+
+    /* ---------- ABOUT ---------- */
+
+    .about-section {
+        gap: 35px;
+    }
+
+    .about-visual {
+        min-height: 280px;
+
+        border-radius: 23px;
+    }
+
+    .about-main-icon {
+        width: 125px;
+        height: 125px;
+
+        border-radius: 30px;
+
+        font-size: 4rem;
+    }
+
+    .about-floating-card {
+        bottom: 14px;
+        right: 14px;
+
+        padding: 10px 12px;
+    }
+
+    .about-content h2 {
+        font-size: 2rem;
+    }
+
+    .about-content > p {
+        font-size: 0.88rem;
+    }
+
+    .about-features {
+        grid-template-columns: 1fr;
+
+        gap: 10px;
+    }
+
+
+    /* ---------- CONTACT ---------- */
+
+    .contact-container {
+        grid-template-columns: 1fr;
+
+        gap: 12px;
+    }
+
+    .contact-card {
+        padding: 23px 18px;
+    }
+
+
+    /* ---------- MODALS ---------- */
+
+    .modal {
+        padding: 14px;
+    }
+
+    .modal-content {
+        max-height: 92vh;
+
+        padding: 28px 20px 24px;
+
+        border-radius: 18px;
+    }
+
+    .modal-icon {
+        width: 56px;
+        height: 56px;
+
+        margin-bottom: 14px;
+    }
+
+    .modal-content h2 {
+        font-size: 1.4rem;
+    }
+
+    .modal-content > p {
+        margin-bottom: 20px;
+    }
+
+    .input-group {
+        margin-bottom: 14px;
+    }
+
+    .input-wrapper input {
+        height: 48px;
+    }
+
+    .modal-btn {
+        min-height: 49px;
+    }
+
+
+    /* ---------- BOOKING ---------- */
+
+    .booking-details {
+        padding: 13px;
+    }
+
+    .booking-details div {
+        padding: 8px 0;
+    }
+
+
+    /* ---------- TOAST ---------- */
+
+    .toast {
+        left: 18px;
+        right: 18px;
+        bottom: 18px;
+
+        width: auto;
+
+        min-width: 0;
+
+        max-width: none;
+    }
+
+
+    /* ---------- FOOTER ---------- */
+
+    footer {
+        padding: 30px 18px 18px;
+    }
+
+    .footer-content {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 10px;
+
+        padding-bottom: 20px;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+
+        gap: 5px;
+
+        font-size: 0.68rem;
+    }
+}
+
+
+/* =========================================================
+   23. VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+    .navbar {
+        padding: 0 14px;
+    }
+
+    .logo {
+        font-size: 1.15rem;
+    }
+
+    .logo i {
+        width: 34px;
+        height: 34px;
+    }
+
+    .hero {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .parking-section,
+    .how-section,
+    .about-section,
+    .contact-section {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .parking-summary {
+        gap: 8px;
+    }
+
+    .summary-card {
+        padding: 12px;
+
+        gap: 8px;
+    }
+
+    .summary-icon {
+        width: 34px;
+        height: 34px;
+    }
+
+    .summary-content strong {
+        font-size: 1.2rem;
+    }
+
+    .city-btn {
+        font-size: 0.8rem;
+    }
+
+    .modal-content {
+        padding-left: 17px;
+        padding-right: 17px;
+    }
+}
+
+
+/* =========================================================
+   24. ACCESSIBILITY
+   ========================================================= */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.3);
+
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   END OF SMARTPARK CSS
+   ========================================================= */
