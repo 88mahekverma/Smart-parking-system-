@@ -1,37 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <meta name="description"
-          content="SmartPark - Smart Parking Reservation System">
-
-    <meta name="theme-color"
-          content="#2563eb">
-
-    <title>SmartPark | Smart Parking System</title>
+    <title>Smart Parking System</title>
 
     <!-- Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-
-    <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
     <!-- Font Awesome -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
 
-    <!-- Main CSS -->
-    <link rel="stylesheet"
-          href="style.css">
+    <!-- Your CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -40,59 +32,48 @@
      NAVBAR
 ===================================================== -->
 
-<header class="navbar">
+<header class="header">
 
-    <!-- Logo -->
-    <a href="#home"
-       class="logo">
+    <div class="navbar">
 
-        <i class="fa-solid fa-square-parking"></i>
+        <a href="#home" class="logo">
+            <i class="fa-solid fa-square-parking"></i>
+            Smart Parking
+        </a>
 
-        <span>
-            Smart<span class="logo-highlight">Park</span>
-        </span>
-
-    </a>
-
-
-    <!-- Desktop / Mobile Navigation -->
-    <nav id="mainNav">
-
-        <a href="#home">Home</a>
-
-        <a href="#parking">Parking</a>
-
-        <a href="#how-it-works">How It Works</a>
-
-        <a href="#about">About</a>
-
-        <a href="#contact">Contact</a>
-
-        <!-- IMPORTANT LOGIN BUTTON -->
         <button
+            id="menuBtn"
+            class="menu-btn"
             type="button"
-            id="loginNavBtn"
-            class="nav-login-btn">
-
-            <i class="fa-solid fa-right-to-bracket"></i>
-
-            Login
-
+        >
+            <i class="fa-solid fa-bars"></i>
         </button>
 
-    </nav>
+        <nav>
 
+            <a href="#home">Home</a>
 
-    <!-- Mobile Menu Button -->
-    <button
-        type="button"
-        id="menuBtn"
-        class="menu-btn"
-        aria-label="Open navigation menu">
+            <a href="#parking">Parking</a>
 
-        <i class="fa-solid fa-bars"></i>
+            <a href="#how-it-works">How It Works</a>
 
-    </button>
+            <a href="#about">About</a>
+
+            <a href="#contact">Contact</a>
+
+            <!-- BIG LOGIN BUTTON -->
+            <button
+                id="loginNavBtn"
+                class="nav-login-btn"
+                type="button"
+            >
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Login
+            </button>
+
+        </nav>
+
+    </div>
 
 </header>
 
@@ -101,159 +82,62 @@
      HERO
 ===================================================== -->
 
-<section id="home"
-         class="hero">
+<section id="home" class="hero">
 
     <div class="hero-content">
 
-        <!-- Live Badge -->
-        <div class="hero-badge">
-
-            <span class="live-dot"></span>
-
-            LIVE PARKING AVAILABILITY
-
-        </div>
-
-
-        <h1>
-
-            Find Your
-            <span>Perfect Parking</span>
-            Spot.
-
-        </h1>
-
-
-        <p>
-
-            Select your city, check live parking availability,
-            and reserve your parking slot easily with SmartPark.
-
+        <p class="hero-small-title">
+            SMART • FAST • SECURE
         </p>
 
+        <h1>
+            Find Your Parking
+            <span>Instantly</span>
+        </h1>
 
-        <!-- HERO BUTTONS -->
+        <p>
+            Check real-time parking availability,
+            reserve your slot and reach your destination
+            without wasting time.
+        </p>
 
-        <div class="hero-buttons">
-
-            <!-- MAIN LOGIN BUTTON -->
-            <button
-                type="button"
-                id="heroLoginBtn"
-                class="primary-btn">
-
-                <i class="fa-solid fa-right-to-bracket"></i>
-
-                Login to Book
-
-            </button>
-
-
-            <a href="#parking"
-               class="secondary-btn">
-
-                <i class="fa-solid fa-location-dot"></i>
-
-                Check Parking
-
-            </a>
-
-        </div>
+        <button
+            id="findParkingBtn"
+            class="primary-btn"
+            type="button"
+        >
+            <i class="fa-solid fa-location-dot"></i>
+            Find Parking
+        </button>
 
     </div>
 
 
-    <!-- HERO PARKING CARD -->
+    <div class="hero-stats">
 
-    <div class="hero-visual">
+        <div class="hero-stat">
 
-        <div class="hero-parking-card">
+            <strong id="heroAvailable">0</strong>
 
-            <div class="hero-card-top">
+            <span>Available</span>
 
-                <span>
-
-                    <span class="live-dot"></span>
-
-                    LIVE
-
-                </span>
-
-                <span>
-
-                    SmartPark
-
-                </span>
-
-            </div>
+        </div>
 
 
-            <div class="hero-car-icon">
+        <div class="hero-stat">
 
-                <i class="fa-solid fa-car"></i>
+            <strong id="heroReserved">0</strong>
 
-            </div>
+            <span>Reserved</span>
 
-
-            <h3>
-
-                Live Parking Status
-
-            </h3>
+        </div>
 
 
-            <p>
+        <div class="hero-stat">
 
-                Real-time parking availability
+            <strong id="heroOccupied">0</strong>
 
-            </p>
-
-
-            <div class="hero-card-line"></div>
-
-
-            <div class="hero-card-info">
-
-                <div>
-
-                    <strong id="heroAvailable">
-                        0
-                    </strong>
-
-                    <span>
-                        Available
-                    </span>
-
-                </div>
-
-
-                <div>
-
-                    <strong id="heroReserved">
-                        0
-                    </strong>
-
-                    <span>
-                        Reserved
-                    </span>
-
-                </div>
-
-
-                <div>
-
-                    <strong id="heroOccupied">
-                        0
-                    </strong>
-
-                    <span>
-                        Occupied
-                    </span>
-
-                </div>
-
-            </div>
+            <span>Occupied</span>
 
         </div>
 
@@ -266,55 +150,46 @@
      PARKING SECTION
 ===================================================== -->
 
-<section id="parking"
-         class="parking-section">
-
-
-    <!-- Section Heading -->
+<section id="parking" class="section parking-section">
 
     <div class="section-heading">
 
-        <span class="section-label">
-            SMART PARKING
-        </span>
+        <p class="section-label">
+            LIVE PARKING
+        </p>
 
         <h2>
-            Find Available Parking
+            Choose Your City
         </h2>
 
         <p>
-            Select your city and check live parking
-            availability.
+            Select a city to see real-time parking slots.
         </p>
 
     </div>
 
 
-    <!-- CITY SELECTOR -->
+    <!-- CITY BUTTONS -->
 
-    <div class="city-selector">
+    <div class="city-buttons">
 
         <button
-            type="button"
             class="city-btn active"
-            data-city="navsari">
-
+            data-city="navsari"
+            type="button"
+        >
             <i class="fa-solid fa-location-dot"></i>
-
             Navsari
-
         </button>
 
 
         <button
-            type="button"
             class="city-btn"
-            data-city="surat">
-
-            <i class="fa-solid fa-city"></i>
-
+            data-city="surat"
+            type="button"
+        >
+            <i class="fa-solid fa-location-dot"></i>
             Surat
-
         </button>
 
     </div>
@@ -324,55 +199,12 @@
 
     <div class="selected-city">
 
-        <i class="fa-solid fa-location-dot"></i>
-
-        <span>
+        <h3>
             Parking in
-        </span>
-
-        <strong id="selectedCityName">
-            Navsari
-        </strong>
-
-    </div>
-
-
-    <!-- LOGIN INFORMATION -->
-
-    <div id="loginMessage"
-         class="info-message">
-
-        <div class="info-message-icon">
-
-            <i class="fa-solid fa-lock"></i>
-
-        </div>
-
-
-        <div class="info-message-content">
-
-            <strong>
-                Login required to book a parking slot
-            </strong>
-
-            <p>
-                Login with your email and password
-                to reserve an available slot.
-            </p>
-
-        </div>
-
-
-        <!-- EASY LOGIN BUTTON -->
-
-        <button
-            type="button"
-            id="parkingLoginBtn"
-            class="small-btn">
-
-            Login
-
-        </button>
+            <span id="selectedCityName">
+                Navsari
+            </span>
+        </h3>
 
     </div>
 
@@ -381,103 +213,46 @@
 
     <div class="parking-summary">
 
+        <div class="summary-card">
 
-        <!-- AVAILABLE -->
+            <i class="fa-solid fa-circle-check"></i>
 
-        <div class="summary-card available-card">
+            <strong id="availableCount">0</strong>
 
-            <div class="summary-icon">
-
-                <i class="fa-solid fa-circle-check"></i>
-
-            </div>
-
-            <div class="summary-content">
-
-                <span>
-                    Available
-                </span>
-
-                <strong id="availableCount">
-                    0
-                </strong>
-
-            </div>
+            <span>Available</span>
 
         </div>
 
 
-        <!-- RESERVED -->
+        <div class="summary-card">
 
-        <div class="summary-card reserved-card">
+            <i class="fa-solid fa-bookmark"></i>
 
-            <div class="summary-icon">
+            <strong id="reservedCount">0</strong>
 
-                <i class="fa-solid fa-bookmark"></i>
-
-            </div>
-
-            <div class="summary-content">
-
-                <span>
-                    Reserved
-                </span>
-
-                <strong id="reservedCount">
-                    0
-                </strong>
-
-            </div>
+            <span>Reserved</span>
 
         </div>
 
 
-        <!-- OCCUPIED -->
+        <div class="summary-card">
 
-        <div class="summary-card occupied-card">
+            <i class="fa-solid fa-car"></i>
 
-            <div class="summary-icon">
+            <strong id="occupiedCount">0</strong>
 
-                <i class="fa-solid fa-car"></i>
-
-            </div>
-
-            <div class="summary-content">
-
-                <span>
-                    Occupied
-                </span>
-
-                <strong id="occupiedCount">
-                    0
-                </strong>
-
-            </div>
+            <span>Occupied</span>
 
         </div>
 
 
-        <!-- TOTAL -->
+        <div class="summary-card">
 
-        <div class="summary-card total-card">
+            <i class="fa-solid fa-square-parking"></i>
 
-            <div class="summary-icon">
+            <strong id="totalCount">0</strong>
 
-                <i class="fa-solid fa-square-parking"></i>
-
-            </div>
-
-            <div class="summary-content">
-
-                <span>
-                    Total Slots
-                </span>
-
-                <strong id="totalCount">
-                    0
-                </strong>
-
-            </div>
+            <span>Total</span>
 
         </div>
 
@@ -486,45 +261,42 @@
 
     <!-- PARKING STATUS -->
 
-    <div id="parkingStatus"
-         class="parking-status loading">
-
-        <i class="fa-solid fa-spinner fa-spin"></i>
-
-        Loading parking data...
-
+    <div
+        id="parkingStatus"
+        class="parking-status"
+    >
+        Loading parking status...
     </div>
 
 
-    <!-- PARKING SLOTS -->
+    <!-- FULL MESSAGE -->
 
-    <div id="slotContainer"
-         class="slot-container">
-
-        <!-- Firebase slots will be inserted here -->
-
+    <div
+        id="fullMessage"
+        class="full-message"
+        style="display: none;"
+    >
+        All parking slots are currently reserved
+        or occupied. Entry is closed for new vehicles.
     </div>
 
 
-    <!-- FULL PARKING MESSAGE -->
+    <!-- LOGIN MESSAGE -->
 
-    <div id="fullMessage"
-         class="full-message hidden">
+    <div
+        id="loginMessage"
+        class="login-message"
+    ></div>
 
-        <div class="full-icon">
 
-            <i class="fa-solid fa-car"></i>
+    <!-- SLOT CONTAINER -->
 
-        </div>
+    <div
+        id="slotContainer"
+        class="slot-container"
+    >
 
-        <h3>
-            Parking Full
-        </h3>
-
-        <p>
-            No parking slots are currently available.
-            Entry is closed.
-        </p>
+        <!-- Firebase slots will appear here -->
 
     </div>
 
@@ -535,98 +307,76 @@
      HOW IT WORKS
 ===================================================== -->
 
-<section id="how-it-works"
-         class="how-section">
-
+<section
+    id="how-it-works"
+    class="section how-section"
+>
 
     <div class="section-heading">
 
-        <span class="section-label">
+        <p class="section-label">
             SIMPLE PROCESS
-        </span>
+        </p>
 
         <h2>
-            How SmartPark Works
+            How It Works
         </h2>
-
-        <p>
-            Parking becomes simple in just a few steps.
-        </p>
 
     </div>
 
 
     <div class="steps-container">
 
-
-        <!-- STEP 1 -->
-
         <div class="step-card">
 
-            <span class="step-number">
+            <div class="step-number">
                 01
-            </span>
-
-            <div class="step-icon">
-
-                <i class="fa-solid fa-location-dot"></i>
-
             </div>
 
-            <h3>
-                Select City
-            </h3>
-
-            <p>
-                Choose Navsari or Surat to view
-                available parking.
-            </p>
-
-        </div>
-
-
-        <!-- STEP 2 -->
-
-        <div class="step-card">
-
-            <span class="step-number">
-                02
-            </span>
-
-            <div class="step-icon">
-
-                <i class="fa-solid fa-right-to-bracket"></i>
-
-            </div>
+            <i class="fa-solid fa-user"></i>
 
             <h3>
                 Login
             </h3>
 
             <p>
-                Login using your email ID and password
-                through Firebase Authentication.
+                Create your account or login using
+                your email and password.
             </p>
 
         </div>
 
 
-        <!-- STEP 3 -->
+        <div class="step-card">
+
+            <div class="step-number">
+                02
+            </div>
+
+            <i class="fa-solid fa-location-dot"></i>
+
+            <h3>
+                Select City
+            </h3>
+
+            <p>
+                Choose Navsari or Surat and check
+                live parking availability.
+            </p>
+
+        </div>
+
 
         <div class="step-card">
 
-            <span class="step-number">
+            <div class="step-number">
                 03
-            </span>
-
-            <div class="step-icon">
-
-                <i class="fa-solid fa-square-parking"></i>
-
             </div>
 
+            <i class="fa-solid fa-square-parking"></i>
+
             <h3>
-                Choose Slot
+                Book Slot
             </h3>
 
             <p>
@@ -637,27 +387,21 @@
         </div>
 
 
-        <!-- STEP 4 -->
-
         <div class="step-card">
 
-            <span class="step-number">
+            <div class="step-number">
                 04
-            </span>
-
-            <div class="step-icon">
-
-                <i class="fa-solid fa-circle-check"></i>
-
             </div>
 
+            <i class="fa-solid fa-car"></i>
+
             <h3>
-                Park Safely
+                Arrive
             </h3>
 
             <p>
-                Complete your booking and use
-                your reserved parking slot.
+                When you reach the parking area,
+                use the arrival button to open the gate.
             </p>
 
         </div>
@@ -671,102 +415,99 @@
      ABOUT
 ===================================================== -->
 
-<section id="about"
-         class="about-section">
+<section id="about" class="section about-section">
 
+    <div class="section-heading">
 
-    <div class="about-visual">
+        <p class="section-label">
+            ABOUT SYSTEM
+        </p>
 
-        <div class="about-main-icon">
-
-            <i class="fa-solid fa-square-parking"></i>
-
-        </div>
-
-
-        <div class="about-floating-card">
-
-            <i class="fa-solid fa-circle-check"></i>
-
-            <div>
-
-                <strong>
-                    Smart Parking
-                </strong>
-
-                <span>
-                    Real-time system
-                </span>
-
-            </div>
-
-        </div>
+        <h2>
+            Smart Parking System
+        </h2>
 
     </div>
 
 
-    <div class="about-content">
+    <div class="about-container">
 
-        <span class="section-label">
-            ABOUT SMARTPARK
-        </span>
+        <div class="about-content">
 
-        <h2>
-            Smarter Parking.
-            <span>Better Experience.</span>
-        </h2>
+            <h3>
+                Parking Made Smarter
+            </h3>
 
-        <p>
+            <p>
+                Our Smart Parking System connects the
+                website, Firebase and ESP32 hardware
+                to provide real-time parking information.
+            </p>
 
-            SmartPark is a smart parking reservation system
-            designed to help users find and reserve available
-            parking slots easily.
+            <p>
+                Users can check parking availability,
+                reserve a slot and access the parking
+                gate after their reservation is verified.
+            </p>
 
-        </p>
-
-        <p>
-
-            The system connects the website, Firebase,
-            and smart parking hardware to provide
-            real-time parking information.
-
-        </p>
+        </div>
 
 
         <div class="about-features">
 
-            <div>
+            <div class="feature">
 
-                <i class="fa-solid fa-check"></i>
+                <i class="fa-solid fa-bolt"></i>
 
-                Live Availability
+                <div>
 
-            </div>
+                    <h4>
+                        Real-Time Data
+                    </h4>
 
+                    <p>
+                        Live parking slot updates.
+                    </p>
 
-            <div>
-
-                <i class="fa-solid fa-check"></i>
-
-                Online Reservation
-
-            </div>
-
-
-            <div>
-
-                <i class="fa-solid fa-check"></i>
-
-                Firebase Integration
+                </div>
 
             </div>
 
 
-            <div>
+            <div class="feature">
 
-                <i class="fa-solid fa-check"></i>
+                <i class="fa-solid fa-shield-halved"></i>
 
-                Smart Gate System
+                <div>
+
+                    <h4>
+                        Secure Login
+                    </h4>
+
+                    <p>
+                        Firebase Authentication.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="feature">
+
+                <i class="fa-solid fa-microchip"></i>
+
+                <div>
+
+                    <h4>
+                        ESP32 Connected
+                    </h4>
+
+                    <p>
+                        Hardware-controlled parking gate.
+                    </p>
+
+                </div>
 
             </div>
 
@@ -781,23 +522,20 @@
      CONTACT
 ===================================================== -->
 
-<section id="contact"
-         class="contact-section">
-
+<section id="contact" class="section contact-section">
 
     <div class="section-heading">
 
-        <span class="section-label">
-            CONTACT
-        </span>
+        <p class="section-label">
+            GET IN TOUCH
+        </p>
 
         <h2>
-            Get In Touch
+            Contact Us
         </h2>
 
         <p>
-            Have a question about SmartPark?
-            Contact us.
+            Have a question about Smart Parking?
         </p>
 
     </div>
@@ -805,65 +543,46 @@
 
     <div class="contact-container">
 
-
-        <!-- EMAIL -->
-
         <div class="contact-card">
 
-            <div class="contact-icon">
-
-                <i class="fa-solid fa-envelope"></i>
-
-            </div>
+            <i class="fa-solid fa-envelope"></i>
 
             <h3>
                 Email
             </h3>
 
             <p>
-                smartpark@example.com
+                smartparking@example.com
             </p>
 
         </div>
 
 
-        <!-- LOCATION -->
-
         <div class="contact-card">
 
-            <div class="contact-icon">
-
-                <i class="fa-solid fa-location-dot"></i>
-
-            </div>
+            <i class="fa-solid fa-location-dot"></i>
 
             <h3>
-                Location
+                Locations
             </h3>
 
             <p>
-                Gujarat, India
+                Navsari & Surat, Gujarat
             </p>
 
         </div>
 
 
-        <!-- SUPPORT -->
-
         <div class="contact-card">
 
-            <div class="contact-icon">
-
-                <i class="fa-solid fa-headset"></i>
-
-            </div>
+            <i class="fa-solid fa-clock"></i>
 
             <h3>
-                Support
+                Service
             </h3>
 
             <p>
-                Smart Parking Support
+                Real-time parking availability
             </p>
 
         </div>
@@ -877,21 +596,18 @@
      LOGIN MODAL
 ===================================================== -->
 
-<div id="loginModal"
-     class="modal">
-
+<div
+    id="loginModal"
+    class="modal"
+>
 
     <div class="modal-content">
 
-
         <button
-            type="button"
             class="close-modal"
-            data-close="loginModal"
-            aria-label="Close login">
-
-            <i class="fa-solid fa-xmark"></i>
-
+            type="button"
+        >
+            &times;
         </button>
 
 
@@ -906,70 +622,56 @@
             Welcome Back
         </h2>
 
-        <p>
-            Login to book your parking slot.
+        <p class="modal-subtitle">
+            Login to your Smart Parking account
         </p>
 
 
-        <!-- LOGIN FORM -->
-
         <form id="loginForm">
-
 
             <!-- EMAIL -->
 
-            <div class="input-group">
+            <div class="form-group">
 
                 <label for="loginEmail">
-                    Email Address
+                    Email
                 </label>
 
-                <div class="input-wrapper">
-
-                    <i class="fa-solid fa-envelope"></i>
-
-                    <input
-                        type="email"
-                        id="loginEmail"
-                        name="email"
-                        placeholder="Enter your email"
-                        autocomplete="email"
-                        required>
-
-                </div>
+                <input
+                    type="email"
+                    id="loginEmail"
+                    placeholder="Enter your email"
+                    autocomplete="email"
+                    required
+                >
 
             </div>
 
 
             <!-- PASSWORD -->
 
-            <div class="input-group">
+            <div class="form-group">
 
                 <label for="loginPassword">
                     Password
                 </label>
 
-                <div class="input-wrapper">
-
-                    <i class="fa-solid fa-lock"></i>
+                <div class="password-wrapper">
 
                     <input
                         type="password"
                         id="loginPassword"
-                        name="password"
                         placeholder="Enter your password"
                         autocomplete="current-password"
-                        required>
-
+                        required
+                    >
 
                     <button
                         type="button"
                         id="togglePassword"
                         class="password-toggle"
-                        aria-label="Show password">
-
-                        <i class="fa-solid fa-eye"></i>
-
+                    >
+                        Show
                     </button>
 
                 </div>
@@ -977,36 +679,34 @@
             </div>
 
 
-            <!-- LOGIN SUBMIT -->
+            <!-- LOGIN -->
 
             <button
                 type="submit"
-                class="modal-btn">
-
+                class="modal-submit-btn"
+            >
                 <i class="fa-solid fa-right-to-bracket"></i>
-
                 Login
-
             </button>
+
+
+            <!-- SIGNUP -->
+
+            <p class="switch-auth">
+
+                Don't have an account?
+
+                <button
+                    type="button"
+                    id="showSignup"
+                    class="text-btn"
+                >
+                    Sign Up
+                </button>
+
+            </p>
 
         </form>
-
-
-        <!-- SIGNUP LINK -->
-
-        <div class="auth-switch">
-
-            Don't have an account?
-
-            <button
-                type="button"
-                id="showSignup">
-
-                Create Account
-
-            </button>
-
-        </div>
 
     </div>
 
@@ -1017,21 +717,18 @@
      SIGNUP MODAL
 ===================================================== -->
 
-<div id="signupModal"
-     class="modal">
-
+<div
+    id="signupModal"
+    class="modal"
+>
 
     <div class="modal-content">
 
-
         <button
-            type="button"
             class="close-modal"
-            data-close="signupModal"
-            aria-label="Close signup">
-
-            <i class="fa-solid fa-xmark"></i>
-
+            type="button"
+        >
+            &times;
         </button>
 
 
@@ -1046,80 +743,287 @@
             Create Account
         </h2>
 
-        <p>
-            Create your SmartPark account.
+        <p class="modal-subtitle">
+            Create your Smart Parking account
         </p>
 
 
-        <!-- SIGNUP FORM -->
-
         <form id="signupForm">
-
 
             <!-- NAME -->
 
-            <div class="input-group">
+            <div class="form-group">
 
                 <label for="signupName">
                     Full Name
                 </label>
 
-                <div class="input-wrapper">
-
-                    <i class="fa-solid fa-user"></i>
-
-                    <input
-                        type="text"
-                        id="signupName"
-                        name="name"
-                        placeholder="Enter your name"
-                        autocomplete="name"
-                        required>
-
-                </div>
+                <input
+                    type="text"
+                    id="signupName"
+                    placeholder="Enter your name"
+                    autocomplete="name"
+                    required
+                >
 
             </div>
 
 
             <!-- EMAIL -->
 
-            <div class="input-group">
+            <div class="form-group">
 
                 <label for="signupEmail">
-                    Email Address
+                    Email
                 </label>
 
-                <div class="input-wrapper">
-
-                    <i class="fa-solid fa-envelope"></i>
-
-                    <input
-                        type="email"
-                        id="signupEmail"
-                        name="email"
-                        placeholder="Enter your email"
-                        autocomplete="email"
-                        required>
-
-                </div>
+                <input
+                    type="email"
+                    id="signupEmail"
+                    placeholder="Enter your email"
+                    autocomplete="email"
+                    required
+                >
 
             </div>
 
 
             <!-- PASSWORD -->
 
-            <div class="input-group">
+            <div class="form-group">
 
                 <label for="signupPassword">
                     Password
                 </label>
 
-                <div class="input-wrapper">
+                <input
+                    type="password"
+                    id="signupPassword"
+                    placeholder="Create a password"
+                    autocomplete="new-password"
+                    minlength="6"
+                    required
+                >
 
-                    <i class="fa-solid fa-lock"></i>
+            </div>
 
-                    <input
-                        type="password"
-                        id="signupPassword"
-                        name="password"
-                      
+
+            <!-- SIGNUP BUTTON -->
+
+            <button
+                type="submit"
+                class="modal-submit-btn"
+            >
+                <i class="fa-solid fa-user-plus"></i>
+                Create Account
+            </button>
+
+
+            <!-- LOGIN -->
+
+            <p class="switch-auth">
+
+                Already have an account?
+
+                <button
+                    type="button"
+                    id="showLogin"
+                    class="text-btn"
+                >
+                    Login
+                </button>
+
+            </p>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     BOOKING MODAL
+===================================================== -->
+
+<div
+    id="bookingModal"
+    class="modal"
+>
+
+    <div class="modal-content">
+
+        <button
+            class="close-modal"
+            type="button"
+        >
+            &times;
+        </button>
+
+
+        <div class="modal-icon">
+
+            <i class="fa-solid fa-square-parking"></i>
+
+        </div>
+
+
+        <h2>
+            Reserve Parking
+        </h2>
+
+        <p class="modal-subtitle">
+            Confirm your parking reservation
+        </p>
+
+
+        <div class="booking-details">
+
+            <div class="booking-detail">
+
+                <span>
+                    City
+                </span>
+
+                <strong id="bookingCity">
+                    -
+                </strong>
+
+            </div>
+
+
+            <div class="booking-detail">
+
+                <span>
+                    Parking Slot
+                </span>
+
+                <strong id="bookingSlot">
+                    -
+                </strong>
+
+            </div>
+
+
+            <div class="booking-detail">
+
+                <span>
+                    Account
+                </span>
+
+                <strong id="bookingUser">
+                    -
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <button
+            id="confirmBookingBtn"
+            class="modal-submit-btn"
+            type="button"
+        >
+            <i class="fa-solid fa-calendar-check"></i>
+            Confirm Reservation
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     PAYMENT MODAL
+===================================================== -->
+
+<div
+    id="paymentModal"
+    class="modal"
+>
+
+    <div class="modal-content">
+
+        <button
+            class="close-modal"
+            type="button"
+        >
+            &times;
+        </button>
+
+
+        <div class="modal-icon">
+
+            <i class="fa-solid fa-credit-card"></i>
+
+        </div>
+
+
+        <h2>
+            Payment
+        </h2>
+
+        <p class="modal-subtitle">
+            Complete your parking payment
+        </p>
+
+
+        <div class="payment-box">
+
+            <p>
+                Parking Reservation
+            </p>
+
+            <strong>
+                Payment
+            </strong>
+
+        </div>
+
+
+        <button
+            id="payNowBtn"
+            class="modal-submit-btn"
+            type="button"
+        >
+            <i class="fa-solid fa-credit-card"></i>
+            Pay Now
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     TOAST
+===================================================== -->
+
+<div
+    id="toast"
+    class="toast"
+>
+
+    <span id="toastIcon">
+        ✓
+    </span>
+
+    <span id="toastMessage">
+        Message
+    </span>
+
+</div>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
+
+<script
+    type="module"
+    src="script.js"
+></script>
+
+</body>
+                </html>
