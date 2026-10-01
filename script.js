@@ -1,1427 +1,1039 @@
-// =====================================================
-// SMARTPARK - FIREBASE + WEBSITE LOGIC
-// =====================================================
-
-
-// =====================================================
-// 1. FIREBASE IMPORTS
-// =====================================================
+// ============================================================
+// SMART PARKING - FINAL SCRIPT
+// Firebase + Login + City Selection + Live Slots + Booking
+// ============================================================
 
 import { initializeApp } from
-  "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 
 import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
+    getAuth,
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut
 } from
-  "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 import {
-  getDatabase,
-  ref,
-  onValue,
-  get,
-  update
+    getDatabase,
+    ref,
+    onValue,
+    get,
+    set,
+    update
 } from
-  "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+    "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
 
-// =====================================================
-// 2. YOUR FIREBASE CONFIGURATION
-// =====================================================
+// ============================================================
+// FIREBASE CONFIG - YOUR PROJECT
+// ============================================================
 
 const firebaseConfig = {
-
-  apiKey:
-    "AIzaSyDCa1T-htDrZsGygxNbKkZxbrYEhF5JYRQ",
-
-  authDomain:
-    "smart-parking-system-d46c9.firebaseapp.com",
-
-  databaseURL:
-    "https://smart-parking-system-d46c9-default-rtdb.asia-southeast1.firebasedatabase.app",
-
-  projectId:
-    "smart-parking-system-d46c9",
-
-  storageBucket:
-    "smart-parking-system-d46c9.firebasestorage.app",
-
-  messagingSenderId:
-    "456268505088",
-
-  appId:
-    "1:456268505088:web:e577fac7746f3a9bc2f8e5",
-
-  measurementId:
-    "G-DH2755KD5Z"
+    apiKey: "AIzaSyDCa1T-htDrZsGygxNbKkZxbrYEh5JYRQ",
+    authDomain: "smart-parking-system-d46c9.firebaseapp.com",
+    databaseURL:
+        "https://smart-parking-system-d46c9-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "smart-parking-system-d46c9",
+    storageBucket: "smart-parking-system-d46c9.firebasestorage.app",
+    messagingSenderId: "456268505088",
+    appId: "1:456268505088:web:e577fac7746f3a9bc2f8e5",
+    measurementId: "G-DH2755KD5Z"
 };
 
 
-// =====================================================
-// 3. INITIALIZE FIREBASE
-// =====================================================
+// ============================================================
+// INITIALIZE FIREBASE
+// ============================================================
 
 const app = initializeApp(firebaseConfig);
-
 const auth = getAuth(app);
-
 const db = getDatabase(app);
 
 
-// =====================================================
-// 4. WEBSITE SETTINGS
-// =====================================================
-
-const CITIES = {
-
-  surat: "Surat",
-
-  navsari: "Navsari"
-
-};
-
-
-const SLOT_IDS = [
-
-  "slot1",
-
-  "slot2",
-
-  "slot3"
-
-];
-
+// ============================================================
+// GLOBAL VARIABLES
+// ============================================================
 
 let selectedCity = "surat";
-
+let currentUser = null;
 let currentSlots = {};
 
-let currentUser = null;
+let stopSlotListener = null;
+let stopGateListener = null;
 
-let selectedSlot = null;
-
-let authMode = "login";
-
-let stopSlotsListener = null;
+let selectedBookingSlot = null;
 
 
-// =====================================================
-// 5. SHORT HTML SELECTOR
-// =====================================================
+// ============================================================
+// HTML ELEMENTS
+// ============================================================
 
-const $ = (id) => {
+const loginNavBtn = document.getElementById("loginNavBtn");
+const loginModal = document.getElementById("loginModal");
+const closeLoginModal = document.getElementById("closeLoginModal");
 
-  return document.getElementById(id);
+const loginForm = document.getElementById("loginForm");
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
 
-};
+const loginMessage = document.getElementById("loginMessage");
+const loginMessageBtn = document.getElementById("loginMessageBtn");
+
+const showSignup = document.getElementById("showSignup");
+
+const signupModal = document.getElementById("signupModal");
+const closeSignupModal = document.getElementById("closeSignupModal");
+const signupForm = document.getElementById("signupForm");
+
+const showLogin = document.getElementById("showLogin");
+
+const cityButtons = document.querySelectorAll(".city-btn");
+
+const selectedCityName =
+    document.getElementById("selectedCityName");
+
+const parkingStatus =
+    document.getElementById("parkingStatus");
+
+const slotContainer =
+    document.getElementById("slotContainer");
+
+const availableCount =
+    document.getElementById("availableCount");
+
+const reservedCount =
+    document.getElementById("reservedCount");
+
+const occupiedCount =
+    document.getElementById("occupiedCount");
+
+const totalCount =
+    document.getElementById("totalCount");
+
+const fullMessage =
+    document.getElementById("fullMessage");
+
+const loginMessageButton =
+    document.getElementById("loginMessageBtn");
 
 
-// =====================================================
-// 6. CITY BUTTONS
-// =====================================================
+// Booking
+const bookingModal =
+    document.getElementById("bookingModal");
 
-const cityButtons =
-  document.querySelectorAll(".city-btn");
+const closeBookingModal =
+    document.getElementById("closeBookingModal");
+
+const bookingCity =
+    document.getElementById("bookingCity");
+
+const bookingSlot =
+    document.getElementById("bookingSlot");
+
+const bookingUser =
+    document.getElementById("bookingUser");
+
+const confirmBookingBtn =
+    document.getElementById("confirmBookingBtn");
 
 
-// =====================================================
-// 7. TOAST MESSAGE
-// =====================================================
+// Payment
+const paymentModal =
+    document.getElementById("paymentModal");
+
+const closePaymentModal =
+    document.getElementById("closePaymentModal");
+
+const payNowBtn =
+    document.getElementById("payNowBtn");
+
+
+// Arrival
+const arrivalPanel =
+    document.getElementById("arrivalPanel");
+
+const arriveBtn =
+    document.getElementById("arriveBtn");
+
+
+// Gate
+const gatePanel =
+    document.getElementById("gatePanel");
+
+const gateIcon =
+    document.getElementById("gateIcon");
+
+const gateStatusText =
+    document.getElementById("gateStatusText");
+
+const gateStatusMessage =
+    document.getElementById("gateStatusMessage");
+
+
+// Toast
+const toast =
+    document.getElementById("toast");
+
+
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
 
 function showToast(message) {
+    if (!toast) return;
 
-  const toast = $("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
 
-  toast.textContent = message;
-
-  toast.classList.add("show");
-
-  setTimeout(() => {
-
-    toast.classList.remove("show");
-
-  }, 3000);
-
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3000);
 }
 
 
-// =====================================================
-// 8. FIREBASE CONNECTION STATUS
-// =====================================================
+function openModal(modal) {
+    if (!modal) return;
 
-function setFirebaseStatus(online, message) {
-
-  $("firebaseStatus").innerHTML = `
-
-    <span
-      class="status-dot"
-      style="
-        background:${online ? "#12b76a" : "#f04438"};
-      ">
-    </span>
-
-    ${message}
-
-  `;
-
-
-  $("connectionDot").style.background =
-    online ? "#12b76a" : "#f04438";
-
+    modal.classList.add("show");
 }
 
 
-// =====================================================
-// 9. CONVERT FIREBASE STATUS INTO STANDARD STATUS
-// =====================================================
+function closeModal(modal) {
+    if (!modal) return;
+
+    modal.classList.remove("show");
+}
+
+
+function setParkingStatus(message, type = "loading") {
+    if (!parkingStatus) return;
+
+    parkingStatus.textContent = message;
+
+    parkingStatus.classList.remove(
+        "loading",
+        "success",
+        "error"
+    );
+
+    parkingStatus.classList.add(type);
+}
+
 
 function normalizeStatus(slot) {
 
-  const status =
-    String(slot?.status || "available").toLowerCase();
+    if (!slot) {
+        return "available";
+    }
+
+    let status = String(
+        slot.status || "available"
+    ).toLowerCase().trim();
+
+    if (
+        status === "reserved" ||
+        status === "booked"
+    ) {
+        return "reserved";
+    }
+
+    if (
+        status === "occupied" ||
+        status === "full"
+    ) {
+        return "occupied";
+    }
+
+    return "available";
+}
 
 
-  if (
-    status === "occupied" ||
-    status === "full"
-  ) {
+// ============================================================
+// LOGIN MODAL
+// ============================================================
 
-    return "occupied";
+if (loginNavBtn) {
 
-  }
+    loginNavBtn.addEventListener("click", () => {
 
+        if (currentUser) {
+            signOut(auth);
+            return;
+        }
 
-  if (
-    status === "reserved" ||
-    status === "reserve" ||
-    status === "booked"
-  ) {
+        openModal(loginModal);
 
-    return "reserved";
-
-  }
-
-
-  return "available";
+    });
 
 }
 
 
-// =====================================================
-// 10. STATUS TEXT
-// =====================================================
+// Close login
+if (closeLoginModal) {
 
-function statusText(status) {
-
-  if (status === "occupied") {
-
-    return "Occupied";
-
-  }
-
-
-  if (status === "reserved") {
-
-    return "Reserved";
-
-  }
-
-
-  return "Available";
+    closeLoginModal.addEventListener("click", () => {
+        closeModal(loginModal);
+    });
 
 }
 
 
-// =====================================================
-// 11. CHECK WHETHER SLOT BELONGS TO CURRENT USER
-// =====================================================
+// Login form
+if (loginForm) {
 
-function isMyReservation(slot) {
+    loginForm.addEventListener("submit", async (event) => {
 
-  if (!currentUser || !slot) {
+        event.preventDefault();
 
-    return false;
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value;
 
-  }
+        if (!email || !password) {
+            showToast("Please enter email and password.");
+            return;
+        }
 
+        try {
 
-  return (
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
 
-    slot.bookedBy === currentUser.uid ||
+            closeModal(loginModal);
 
-    slot.bookedBy === currentUser.email ||
+            showToast("Login successful.");
 
-    slot.bookedEmail === currentUser.email
+        } catch (error) {
 
-  );
+            console.error(error);
 
-}
+            showToast(
+                "Login failed: " + error.message
+            );
 
+        }
 
-// =====================================================
-// 12. FORMAT BOOKING TIME
-// =====================================================
-
-function formatDate(value) {
-
-  if (!value) {
-
-    return "";
-
-  }
-
-
-  const date =
-    new Date(Number(value));
-
-
-  if (Number.isNaN(date.getTime())) {
-
-    return "";
-
-  }
-
-
-  return date.toLocaleString("en-IN", {
-
-    day: "2-digit",
-
-    month: "short",
-
-    hour: "2-digit",
-
-    minute: "2-digit"
-
-  });
+    });
 
 }
 
 
-// =====================================================
-// 13. DISPLAY PARKING SLOTS
-// =====================================================
+// ============================================================
+// SIGN UP
+// ============================================================
+
+if (showSignup) {
+
+    showSignup.addEventListener("click", () => {
+
+        closeModal(loginModal);
+        openModal(signupModal);
+
+    });
+
+}
+
+
+if (showLogin) {
+
+    showLogin.addEventListener("click", () => {
+
+        closeModal(signupModal);
+        openModal(loginModal);
+
+    });
+
+}
+
+
+if (closeSignupModal) {
+
+    closeSignupModal.addEventListener("click", () => {
+        closeModal(signupModal);
+    });
+
+}
+
+
+if (signupForm) {
+
+    signupForm.addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+        const emailInput =
+            document.getElementById("signupEmail");
+
+        const passwordInput =
+            document.getElementById("signupPassword");
+
+        const email =
+            emailInput?.value.trim();
+
+        const password =
+            passwordInput?.value;
+
+        if (!email || !password) {
+
+            showToast(
+                "Please enter email and password."
+            );
+
+            return;
+        }
+
+        try {
+
+            await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+            closeModal(signupModal);
+
+            showToast("Account created successfully.");
+
+        } catch (error) {
+
+            console.error(error);
+
+            showToast(
+                "Signup failed: " + error.message
+            );
+
+        }
+
+    });
+
+}
+
+
+// ============================================================
+// AUTH STATE
+// ============================================================
+
+onAuthStateChanged(auth, (user) => {
+
+    currentUser = user;
+
+    if (!loginNavBtn) return;
+
+    if (user) {
+
+        loginNavBtn.textContent = "Logout";
+
+    } else {
+
+        loginNavBtn.textContent = "Login";
+
+    }
+
+    updateArrivalButton();
+
+});
+
+
+// ============================================================
+// CITY BUTTONS - IMPORTANT FIX
+// ============================================================
+
+cityButtons.forEach((button) => {
+
+    button.addEventListener("click", () => {
+
+        const city =
+            button.dataset.city;
+
+        if (!city) return;
+
+        // ACTUALLY CHANGE THE CITY
+        selectedCity = city.toLowerCase();
+
+        // Change active button
+        cityButtons.forEach((btn) => {
+            btn.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        // Change heading
+        if (selectedCityName) {
+
+            selectedCityName.textContent =
+                city.charAt(0).toUpperCase() +
+                city.slice(1) +
+                " Parking";
+
+        }
+
+        // Reset display
+        if (slotContainer) {
+
+            slotContainer.innerHTML =
+                `<div class="loading-box">
+                    Loading parking data...
+                </div>`;
+
+        }
+
+        // Load selected city
+        loadCity(selectedCity);
+
+    });
+
+});
+
+
+// ============================================================
+// LOAD CITY
+// ============================================================
+
+function loadCity(city) {
+
+    selectedCity = city.toLowerCase();
+
+    console.log(
+        "Loading city:",
+        selectedCity
+    );
+
+    if (selectedCityName) {
+
+        selectedCityName.textContent =
+            selectedCity === "surat"
+                ? "Surat Parking"
+                : "Navsari Parking";
+
+    }
+
+    setParkingStatus(
+        `Connecting to ${selectedCityName?.textContent || selectedCity}...`,
+        "loading"
+    );
+
+
+    // Stop previous listener
+    if (stopSlotListener) {
+
+        stopSlotListener();
+        stopSlotListener = null;
+
+    }
+
+
+    // Stop previous gate listener
+    if (stopGateListener) {
+
+        stopGateListener();
+        stopGateListener = null;
+
+    }
+
+
+    // EXACT FIREBASE PATH
+    const slotsRef =
+        ref(
+            db,
+            `cities/${selectedCity}/slots`
+        );
+
+
+    stopSlotListener = onValue(
+        slotsRef,
+
+        (snapshot) => {
+
+            console.log(
+                "Firebase slot data:",
+                snapshot.val()
+            );
+
+            const data =
+                snapshot.val();
+
+            if (!data) {
+
+                currentSlots = {};
+
+                setParkingStatus(
+                    `${selectedCityName?.textContent || selectedCity} connected, but no slot data was found.`,
+                    "error"
+                );
+
+                renderSlots();
+
+                return;
+            }
+
+
+            currentSlots = data;
+
+            setParkingStatus(
+                "Connected to Firebase",
+                "success"
+            );
+
+            renderSlots();
+
+            updateArrivalButton();
+
+        },
+
+        (error) => {
+
+            console.error(
+                "Firebase slot error:",
+                error
+            );
+
+            setParkingStatus(
+                "Firebase connection error.",
+                "error"
+            );
+
+            if (slotContainer) {
+
+                slotContainer.innerHTML =
+                    `<div class="loading-box">
+                        Unable to load parking data.
+                    </div>`;
+
+            }
+
+        }
+    );
+
+
+    loadGate(city);
+
+}
+
+
+// ============================================================
+// RENDER SLOTS
+// ============================================================
 
 function renderSlots() {
 
-  const grid = $("slotsGrid");
+    if (!slotContainer) return;
 
-  grid.innerHTML = "";
 
+    const slotIds = [
+        "slot1",
+        "slot2",
+        "slot3"
+    ];
 
-  let available = 0;
 
-  let occupied = 0;
+    let available = 0;
+    let reserved = 0;
+    let occupied = 0;
 
-  let reserved = 0;
 
-  let myReservation = null;
+    slotContainer.innerHTML = "";
 
 
-  SLOT_IDS.forEach((slotId) => {
+    slotIds.forEach((slotId) => {
 
-    const slot =
-      currentSlots[slotId] || {};
+        const slot =
+            currentSlots[slotId] || {};
 
+        const status =
+            normalizeStatus(slot);
 
-    const status =
-      normalizeStatus(slot);
 
-
-    // Count statuses
-
-    if (status === "available") {
-
-      available++;
-
-    }
-
-
-    if (status === "occupied") {
-
-      occupied++;
-
-    }
-
-
-    if (status === "reserved") {
-
-      reserved++;
-
-    }
-
-
-    // Check current user's reservation
-
-    if (isMyReservation(slot)) {
-
-      myReservation = {
-
-        slotId,
-
-        slot
-
-      };
-
-    }
-
-
-    // Create card
-
-    const card =
-      document.createElement("article");
-
-
-    card.className =
-      `slot-card ${status}`;
-
-
-    // Reserve button
-
-    let reserveButton;
-
-
-    if (status === "available") {
-
-      reserveButton = `
-
-        <button
-          class="btn btn-primary full-width reserve-btn"
-          data-slot="${slotId}">
-
-          Reserve Slot
-
-        </button>
-
-      `;
-
-    }
-
-    else {
-
-      reserveButton = `
-
-        <button
-          class="btn btn-outline full-width"
-          disabled>
-
-          ${
-            status === "occupied"
-              ? "Occupied"
-              : "Reserved"
-          }
-
-        </button>
-
-      `;
-
-    }
-
-
-    // Slot information
-
-    let slotInfo;
-
-
-    if (status === "reserved") {
-
-      slotInfo = `
-
-        <div class="slot-info">
-
-          ${
-            isMyReservation(slot)
-              ? "Reserved by you"
-              : "Reserved"
-          }
-
-          ${
-            slot.bookingTime
-              ? " • " + formatDate(slot.bookingTime)
-              : ""
-          }
-
-        </div>
-
-      `;
-
-    }
-
-    else {
-
-      slotInfo = `
-
-        <div class="slot-info">
-
-          ${
-            status === "occupied"
-              ? "Vehicle detected in this slot"
-              : "Ready for reservation"
-          }
-
-        </div>
-
-      `;
-
-    }
-
-
-    // Complete card
-
-    card.innerHTML = `
-
-      <div class="slot-top">
-
-        <span class="slot-number">
-
-          ${slotId.replace("slot", "Slot ")}
-
-        </span>
-
-
-        <span class="status-badge ${status}">
-
-          ${statusText(status)}
-
-        </span>
-
-      </div>
-
-
-      <div class="slot-visual">
-
-        ${
-          status === "available"
-            ? "P"
-            : status === "occupied"
-              ? "●"
-              : "R"
+        if (status === "available") {
+            available++;
         }
 
-      </div>
-
-
-      ${slotInfo}
-
-
-      ${reserveButton}
-
-    `;
-
-
-    grid.appendChild(card);
-
-  });
-
-
-  // ===================================================
-  // RESERVE BUTTON EVENTS
-  // ===================================================
-
-  document
-    .querySelectorAll(".reserve-btn")
-    .forEach((button) => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          openPayment(
-            button.dataset.slot
-          );
-
+        if (status === "reserved") {
+            reserved++;
         }
-      );
+
+        if (status === "occupied") {
+            occupied++;
+        }
+
+
+        const card =
+            document.createElement("div");
+
+        card.className =
+            "slot-card";
+
+
+        const readableSlot =
+            slotId
+                .replace("slot", "Slot ");
+
+
+        let statusText =
+            "Available";
+
+
+        if (status === "reserved") {
+            statusText = "Reserved";
+        }
+
+        if (status === "occupied") {
+            statusText = "Occupied";
+        }
+
+
+        card.innerHTML = `
+
+            <div class="slot-top">
+
+                <div class="slot-name">
+                    ${readableSlot}
+                </div>
+
+                <span class="status-badge ${status}">
+                    ${statusText}
+                </span>
+
+            </div>
+
+            <div class="slot-bottom">
+
+                ${
+                    status === "available"
+                    ?
+                    `<button
+                        class="slot-action reserve-btn"
+                        data-slot="${slotId}">
+                        Reserve
+                    </button>`
+                    :
+                    `<span class="slot-unavailable">
+                        ${statusText}
+                    </span>`
+                }
+
+            </div>
+        `;
+
+
+        slotContainer.appendChild(card);
 
     });
 
 
-  // ===================================================
-  // SUMMARY
-  // ===================================================
+    // Counts
+    if (availableCount) {
+        availableCount.textContent =
+            available;
+    }
 
-  $("parkingSummary").innerHTML = `
+    if (reservedCount) {
+        reservedCount.textContent =
+            reserved;
+    }
 
-    <span class="pill available">
+    if (occupiedCount) {
+        occupiedCount.textContent =
+            occupied;
+    }
 
-      ${available} Available
+    if (totalCount) {
+        totalCount.textContent =
+            slotIds.length;
+    }
 
-    </span>
 
+    // Full message
+    if (fullMessage) {
 
-    <span class="pill occupied">
+        if (available === 0) {
 
-      ${occupied} Occupied
+            fullMessage.classList.remove(
+                "hidden"
+            );
 
-    </span>
+        } else {
 
+            fullMessage.classList.add(
+                "hidden"
+            );
 
-    <span class="pill reserved">
-
-      ${reserved} Reserved
-
-    </span>
-
-  `;
-
-
-  // Hero number
-
-  $("heroAvailable").textContent =
-    available;
-
-
-  // ===================================================
-  // FULL PARKING
-  // ===================================================
-
-  const parkingFull =
-    available === 0;
-
-
-  $("fullNotice")
-    .classList
-    .toggle(
-      "hidden",
-      !parkingFull
-    );
-
-
-  // ===================================================
-  // ARRIVAL BUTTON
-  // ===================================================
-
-  if (myReservation) {
-
-    $("arrivalPanel")
-      .classList
-      .remove("hidden");
-
-
-    $("arrivalTitle").textContent =
-
-      `${CITIES[selectedCity]} • ${
-        myReservation.slotId
-          .replace("slot", "Slot ")
-      }`;
-
-
-    $("arrivalText").textContent =
-
-      "Your reservation is valid. Tap only when you are physically at the entry gate.";
-
-
-    $("arriveBtn").disabled = false;
-
-  }
-
-  else {
-
-    $("arrivalPanel")
-      .classList
-      .add("hidden");
-
-  }
-
-}
-
-
-// =====================================================
-// 14. LISTEN TO FIREBASE PARKING DATA
-// =====================================================
-
-function listenToSlots() {
-
-  if (stopSlotsListener) {
-
-    stopSlotsListener();
-
-  }
-
-
-  $("slotsGrid").innerHTML = `
-
-    <div class="loading-card">
-
-      Loading ${CITIES[selectedCity]} parking data...
-
-    </div>
-
-  `;
-
-
-  const slotsRef =
-    ref(
-      db,
-      `cities/${selectedCity}/slots`
-    );
-
-
-  stopSlotsListener = onValue(
-
-    slotsRef,
-
-    (snapshot) => {
-
-      currentSlots =
-        snapshot.val() || {};
-
-
-      renderSlots();
-
-
-      setFirebaseStatus(
-        true,
-        "Firebase connected"
-      );
-
-    },
-
-
-    (error) => {
-
-      console.error(error);
-
-
-      setFirebaseStatus(
-        false,
-        "Firebase database error"
-      );
-
-
-      $("slotsGrid").innerHTML = `
-
-        <div class="loading-card">
-
-          Unable to read parking data.
-
-          <br><br>
-
-          Please check your Firebase
-          Realtime Database rules.
-
-        </div>
-
-      `;
+        }
 
     }
 
-  );
 
+    // Reserve buttons
+    document
+        .querySelectorAll(".reserve-btn")
+        .forEach((button) => {
 
-  listenToGate();
+            button.addEventListener(
+                "click",
+                () => {
+
+                    const slotId =
+                        button.dataset.slot;
+
+                    startBooking(slotId);
+
+                }
+            );
+
+        });
 
 }
 
 
-// =====================================================
-// 15. LISTEN TO ENTRY GATE
-// =====================================================
+// ============================================================
+// START BOOKING
+// ============================================================
 
-function listenToGate() {
+function startBooking(slotId) {
 
-  const gateRef =
-    ref(
-      db,
-      `cities/${selectedCity}/gate`
-    );
+    if (!currentUser) {
 
+        openModal(loginModal);
 
-  onValue(
-
-    gateRef,
-
-    (snapshot) => {
-
-      const gate =
-        snapshot.val() || {};
-
-
-      const isOpen =
-        gate.open === true;
-
-
-      $("gatePanel")
-        .classList
-        .toggle(
-          "open",
-          isOpen
+        showToast(
+            "Please login before reserving a slot."
         );
 
-
-      $("gateStatusText")
-        .textContent =
-
-        isOpen
-          ? "Gate Open"
-          : "Gate Closed";
-
-
-      $("gateStatusMessage")
-        .textContent =
-
-        isOpen
-
-          ? "Entry gate has been opened for a valid arrival request."
-
-          : "The gate stays closed until a valid reserved user confirms arrival.";
-
-
-      $("gateIcon")
-        .textContent =
-
-        isOpen
-          ? "↥"
-          : "▣";
-
+        return;
     }
 
-  );
 
-}
-
-
-// =====================================================
-// 16. SELECT CITY
-// =====================================================
-
-function selectCity(city) {
-
-  selectedCity = city;
-
-
-  cityButtons.forEach((button) => {
-
-    button.classList.toggle(
-
-      "active",
-
-      button.dataset.city === city
-
-    );
-
-  });
-
-
-  $("cityTitle").textContent =
-
-    `${CITIES[city]} Parking`;
-
-
-  $("cityMessage").textContent =
-
-    "Live slot status";
-
-
-  $("arrivalPanel")
-    .classList
-    .add("hidden");
-
-
-  listenToSlots();
-
-}
-
-
-// =====================================================
-// 17. OPEN PAYMENT / RESERVATION
-// =====================================================
-
-async function openPayment(slotId) {
-
-  // User must log in
-
-  if (!currentUser) {
-
-    showToast(
-      "Please log in before reserving a slot."
-    );
-
-
-    openModal("authModal");
-
-    return;
-
-  }
-
-
-  const slotRef =
-    ref(
-      db,
-      `cities/${selectedCity}/slots/${slotId}`
-    );
-
-
-  try {
-
-    // Get latest slot value
-
-    const snapshot =
-      await get(slotRef);
+    selectedBookingSlot =
+        slotId;
 
 
     const slot =
-      snapshot.val() || {};
+        currentSlots[slotId];
 
 
-    // Make sure slot is still available
+    if (!slot) return;
+
 
     if (
-      normalizeStatus(slot)
-      !== "available"
+        normalizeStatus(slot) !==
+        "available"
     ) {
 
-      showToast(
-        "Sorry, this slot is no longer available."
-      );
+        showToast(
+            "This slot is no longer available."
+        );
 
-      return;
+        return;
 
     }
 
 
-    selectedSlot = slotId;
+    if (bookingCity) {
 
-
-    $("payCity").textContent =
-      CITIES[selectedCity];
-
-
-    $("paySlot").textContent =
-      slotId.replace(
-        "slot",
-        "Slot "
-      );
-
-
-    $("paymentMessage").textContent =
-      "";
-
-
-    openModal(
-      "paymentModal"
-    );
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-
-    showToast(
-      "Could not verify the slot. Please try again."
-    );
-
-  }
-
-}
-
-
-// =====================================================
-// 18. PAYMENT + RESERVATION
-// =====================================================
-
-async function completePaymentAndReservation() {
-
-  if (
-    !currentUser ||
-    !selectedSlot
-  ) {
-
-    return;
-
-  }
-
-
-  const payButton =
-    $("payBtn");
-
-
-  const message =
-    $("paymentMessage");
-
-
-  payButton.disabled = true;
-
-  payButton.textContent =
-    "Processing...";
-
-
-  const slotRef =
-    ref(
-      db,
-      `cities/${selectedCity}/slots/${selectedSlot}`
-    );
-
-
-  try {
-
-    // Check again before booking
-
-    const snapshot =
-      await get(slotRef);
-
-
-    const slot =
-      snapshot.val() || {};
-
-
-    if (
-      normalizeStatus(slot)
-      !== "available"
-    ) {
-
-      message.textContent =
-        "This slot was just taken. Please choose another slot.";
-
-      return;
+        bookingCity.textContent =
+            selectedCity === "surat"
+                ? "Surat"
+                : "Navsari";
 
     }
 
 
-    const now =
-      Date.now();
+    if (bookingSlot) {
+
+        bookingSlot.textContent =
+            slotId
+                .replace("slot", "Slot ");
+
+    }
 
 
-    const expiry =
-      now +
-      (2 * 60 * 60 * 1000);
+    if (bookingUser) {
+
+        bookingUser.textContent =
+            currentUser.email;
+
+    }
 
 
-    // =================================================
-    // WRITE RESERVATION TO FIREBASE
-    // =================================================
-
-    await update(
-
-      slotRef,
-
-      {
-
-        status: "reserved",
-
-        bookedBy:
-          currentUser.uid,
-
-        bookedEmail:
-          currentUser.email,
-
-        bookingTime:
-          now,
-
-        expiryTime:
-          expiry,
-
-        paymentStatus:
-          "paid",
-
-        paymentAmount:
-          50
-
-      }
-
-    );
-
-
-    closeModal(
-      "paymentModal"
-    );
-
-
-    showToast(
-
-      `${CITIES[selectedCity]} ${
-        selectedSlot.replace(
-          "slot",
-          "Slot "
-        )
-      } reserved successfully.`
-
-    );
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-
-    message.textContent =
-      error.message ||
-      "Reservation failed. Check Firebase rules.";
-
-  }
-
-  finally {
-
-    payButton.disabled = false;
-
-    payButton.textContent =
-      "Pay ₹50 & Reserve";
-
-  }
+    openModal(bookingModal);
 
 }
 
 
-// =====================================================
-// 19. I HAVE ARRIVED
-// =====================================================
+// ============================================================
+// CLOSE BOOKING MODAL
+// ============================================================
 
-async function handleArrival() {
+if (closeBookingModal) {
 
-  if (!currentUser) {
-
-    showToast(
-      "Please log in first."
+    closeBookingModal.addEventListener(
+        "click",
+        () => {
+            closeModal(bookingModal);
+        }
     );
 
-    return;
-
-  }
+}
 
 
-  // Find user's reservation
+// ============================================================
+// CONFIRM BOOKING
+// ============================================================
 
-  const mySlotEntry =
+if (confirmBookingBtn) {
 
-    SLOT_IDS
+    confirmBookingBtn.addEventListener(
+        "click",
+        () => {
 
-      .map((slotId) => ({
+            if (!currentUser) {
 
-        slotId,
+                closeModal(bookingModal);
+                openModal(loginModal);
 
-        slot:
-          currentSlots[slotId] || {}
+                return;
 
-      }))
-
-      .find(({ slot }) =>
-
-        isMyReservation(slot)
-
-      );
-
-
-  // No reservation
-
-  if (!mySlotEntry) {
-
-    showToast(
-      "No valid reservation found for your account."
-    );
-
-    return;
-
-  }
-
-
-  const arriveButton =
-    $("arriveBtn");
-
-
-  arriveButton.disabled = true;
-
-  arriveButton.textContent =
-    "Opening Gate...";
-
-
-  try {
-
-    // =================================================
-    // OPEN FIREBASE GATE
-    // =================================================
-
-    await update(
-
-      ref(
-        db,
-        `cities/${selectedCity}/gate`
-      ),
-
-      {
-
-        open: true,
-
-        openedBy:
-          currentUser.uid,
-
-        openedEmail:
-          currentUser.email,
-
-        openedSlot:
-          mySlotEntry.slotId,
-
-        openedAt:
-          Date.now()
-
-      }
-
-    );
-
-
-    showToast(
-      "Arrival confirmed. Entry gate opened."
-    );
-
-
-    // =================================================
-    // CLOSE GATE COMMAND AFTER 8 SECONDS
-    // =================================================
-
-    setTimeout(
-      async () => {
-
-        try {
-
-          await update(
-
-            ref(
-              db,
-              `cities/${selectedCity}/gate`
-            ),
-
-            {
-              open: false
             }
 
-          );
+
+            closeModal(bookingModal);
+
+            openModal(paymentModal);
 
         }
+    );
 
-        catch (error) {
+}
 
-          console.error(
-            "Gate close update failed:",
-            error
-          );
 
+// ============================================================
+// CLOSE PAYMENT
+// ============================================================
+
+if (closePaymentModal) {
+
+    closePaymentModal.addEventListener(
+        "click",
+        () => {
+            closeModal(paymentModal);
         }
-
-      },
-      8000
     );
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-
-    showToast(
-      "Could not open the gate. Check Firebase rules."
-    );
-
-  }
-
-  finally {
-
-    setTimeout(
-      () => {
-
-        arriveButton.disabled =
-          false;
-
-        arriveButton.textContent =
-          "I Have Arrived";
-
-      },
-      2500
-    );
-
-  }
 
 }
 
 
-// =====================================================
-// 20. OPEN MODAL
-// =====================================================
+// ============================================================
+// PAYMENT + RESERVATION
+// ============================================================
 
-function openModal(id) {
+if (payNowBtn) {
 
-  $(id)
-    .classList
-    .remove("hidden");
+    payNowBtn.addEventListener(
+        "click",
+        async () => {
 
-}
+            if (!currentUser) {
 
+                closeModal(paymentModal);
+                openModal(loginModal);
 
-// =====================================================
-// 21. CLOSE MODAL
-// =====================================================
+                return;
 
-function closeModal(id) {
+            }
 
-  $(id)
-    .classList
-    .add("hidden");
 
-}
+            if (!selectedBookingSlot) {
 
+                showToast(
+                    "Please select a slot."
+                );
 
-// =====================================================
-// 22. LOGIN / REGISTER MODE
-// =====================================================
+                return;
 
-function setAuthMode(mode) {
+            }
 
-  authMode = mode;
 
+            const slotRef =
+                ref(
+                    db,
+                    `cities/${selectedCity}/slots/${selectedBookingSlot}`
+                );
 
-  $("authTitle").textContent =
 
-    mode === "login"
-      ? "Login"
-      : "Create Account";
+            try {
 
+                // Check latest Firebase value
+                const snapshot =
+                    await get(slotRef);
 
-  $("authSubtitle").textContent =
 
-    mode === "login"
+                const latestSlot =
+                    snapshot.val();
 
-      ? "Log in to reserve a parking slot."
 
-      : "Create your SmartPark account.";
+                if (
+                    normalizeStatus(latestSlot) !==
+                    "available"
+                ) {
 
+                    closeModal(paymentModal);
 
-  $("authSubmit").textContent =
+                    showToast(
+                        "Sorry, this slot was just booked."
+                    );
 
-    mode === "login"
-      ? "Login"
-      : "Create Account";
+                    return;
 
+                }
 
-  $("toggleAuthMode").textContent =
 
-    mode === "login"
+                const now =
+                    Date.now();
 
-      ? "Create a new account"
 
-      : "Already have an account? Login";
+                const expiry =
+                    now +
+                    (2 * 60 * 60 * 1000);
 
 
-  $("authMessage").textContent =
-    "";
+                await update(
+                    slotRef,
+                    {
 
-}
+                        status: "reserved",
 
+                        bookedBy:
+                            currentUser.uid,
 
-// =====================================================
-// 23. LOGIN / REGISTER
-// =====================================================
+                        bookedEmail:
+                            currentUser.email,
 
-async function handleAuth(event) {
+                        bookingTime:
+                            now,
 
-  event.preventDefault();
+                        expiryTime:
+                            expiry,
 
+                        paymentStatus:
+                            "paid",
 
-  const email =
-    $("emailInput").value.trim();
+                        paymentAmount:
+                            50
 
+                    }
+                );
 
-  const password =
-    $("passwordInput").value;
 
+                closeModal(paymentModal);
 
-  const message =
-    $("authMessage");
 
+                showToast(
+                    "Payment successful. Slot reserved!"
+                );
 
-  const button =
-    $("authSubmit");
 
-
-  button.disabled = true;
-
-
-  button.textContent =
-
-    authMode === "login"
-      ? "Logging in..."
-      : "Creating...";
-
-
-  try {
-
-    if (
-      authMode === "login"
-    ) {
-
-      await signInWithEmailAndPassword(
-
-        auth,
-
-        email,
-
-        password
-
-      );
-
-
-      showToast(
-        "Login successful."
-      );
-
-    }
-
-    else {
-
-      await createUserWithEmailAndPassword(
-
-        auth,
-
-        email,
-
-        password
-
-      );
-
-
-      showToast(
-        "Account created successfully."
-      );
-
-    }
-
-
-    $("authForm").reset();
-
-
-    closeModal(
-      "authModal"
-    );
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-
-    const friendlyMessages = {
-
-      "auth/invalid-credential":
-        "Invalid email or password.",
-
-      "auth/email-already-in-use":
-        "This email is already registered.",
-
-      "auth/weak-password":
-        "Password must be at least 6 characters.",
-
-      "auth/invalid-email":
-        "Please enter a valid email address.",
-
-      "auth/network-request-failed":
-        "Network error. Check your internet connection."
-
-    };
-
-
-    m
+                selectedBookingSlot =
+                    
