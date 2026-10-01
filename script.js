@@ -873,4 +873,166 @@ async function findMyReservation() {
                     slot.bookedEmail ===
                     currentUser.email
                 )
-           
+           ) {
+                currentReservation = {
+                    slotId: slotId,
+                    city: selectedCity,
+                    ...slot
+                };
+            }
+        });
+
+        if (currentReservation) {
+            arrivalPanel.classList.remove("hidden");
+        }
+
+    } catch (error) {
+        console.error("Reservation check error:", error);
+    }
+}
+
+
+// ======================================================
+// I HAVE ARRIVED
+// ======================================================
+
+if (arriveBtn) {
+    arriveBtn.addEventListener("click", async () => {
+
+        if (!currentUser) {
+            openLogin();
+            return;
+        }
+
+        if (!currentReservation) {
+            showToast("No valid reservation found.");
+            return;
+        }
+
+        const gateRef = ref(
+            db,
+            `cities/${selectedCity}/gate`
+        );
+
+        try {
+
+            await update(gateRef, {
+                open: true,
+                openedBy: currentUser.uid,
+                openedEmail: currentUser.email,
+                openedSlot: currentReservation.slotId,
+                openedAt: Date.now()
+            });
+
+            showToast("Gate opened.");
+
+            setTimeout(async () => {
+
+                try {
+                    await update(gateRef, {
+                        open: false
+                    });
+                } catch (error) {
+                    console.error("Gate close error:", error);
+                }
+
+            }, 8000);
+
+        } catch (error) {
+
+            console.error("Gate error:", error);
+
+            showToast("Unable to open gate.");
+        }
+    });
+}
+
+
+// ======================================================
+// GATE LISTENER
+// ======================================================
+
+function listenToGate() {
+
+    const gateRef = ref(
+        db,
+        `cities/${selectedCity}/gate`
+    );
+
+    onValue(
+        gateRef,
+        (snapshot) => {
+
+            const gate = snapshot.val();
+            const isOpen = gate?.open === true;
+
+            if (isOpen) {
+
+                gatePanel.classList.add("gate-open");
+
+                gateIcon.textContent = "OPEN";
+
+                gateStatusText.textContent =
+                    "Gate Open";
+
+                gateStatusMessage.textContent =
+                    "Entry gate is currently open.";
+
+            } else {
+
+                gatePanel.classList.remove("gate-open");
+
+                gateIcon.textContent = "CLOSED";
+
+                gateStatusText.textContent =
+                    "Gate Closed";
+
+                gateStatusMessage.textContent =
+                    "Gate is closed.";
+            }
+        },
+        (error) => {
+            console.error(
+                "Gate listener error:",
+                error
+            );
+        }
+    );
+}
+
+
+// ======================================================
+// CLOSE MODALS WHEN CLICKING OUTSIDE
+// ======================================================
+
+window.addEventListener("click", (event) => {
+
+    if (event.target === loginModal) {
+        closeLogin();
+    }
+
+    if (event.target === signupModal) {
+        closeSignup();
+    }
+
+    if (event.target === bookingModal) {
+        closeBooking();
+    }
+
+    if (event.target === paymentModal) {
+        closePayment();
+    }
+
+});
+
+
+// ======================================================
+// INITIAL LOAD
+// ======================================================
+
+console.log(
+    "SmartPark JavaScript loaded successfully."
+);
+
+loadParkingData();
+listenToGate();
