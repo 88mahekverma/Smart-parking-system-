@@ -1453,4 +1453,48 @@ button {
     }
 
 
-    .
+    /* ============================================================
+   VERY SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 380px) {
+
+    .hero h1 {
+        font-size: 38px;
+    }
+
+    .hero-text {
+        font-size: 15px;
+    }
+
+    .city-buttons {
+        gap: 8px;
+    }
+
+    .city-btn {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .summary-card {
+        padding: 15px 8px;
+    }
+
+    .summary-card span {
+        font-size: 22px;
+    }
+
+    .summary-card p {
+        font-size: 12px;
+    }
+
+    .modal-box {
+        padding: 24px 16px;
+    }
+
+    .toast {
+        min-width: 240px;
+        font-size: 13px;
+    }
+
+}
