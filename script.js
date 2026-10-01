@@ -1,6 +1,6 @@
 /* ============================================================
    SMARTPARK - SMART PARKING SYSTEM
-   FIREBASE + AUTH + BOOKING + PAYMENT
+   FIREBASE + AUTH + BOOKING + PAYMENT + ARRIVAL + GATE
    ============================================================ */
 
 
@@ -36,6 +36,7 @@ let selectedCity = "surat";
 let selectedSlot = null;
 
 let firebaseReady = false;
+let gateListenerStarted = false;
 
 
 /* ============================================================
@@ -237,17 +238,13 @@ function closeModal(modal) {
    PARKING STATUS
    ============================================================ */
 
-function setParkingStatus(
-    message,
-    type = "loading"
-) {
+function setParkingStatus(message, type = "loading") {
 
     if (!parkingStatus) {
         return;
     }
 
-    parkingStatus.textContent =
-        message;
+    parkingStatus.textContent = message;
 
     parkingStatus.classList.remove(
         "success",
@@ -269,31 +266,23 @@ function formatDateTime(date) {
         date.getFullYear();
 
     const month =
-        String(
-            date.getMonth() + 1
-        ).padStart(2, "0");
+        String(date.getMonth() + 1).padStart(2, "0");
 
     const day =
-        String(
-            date.getDate()
-        ).padStart(2, "0");
+        String(date.getDate()).padStart(2, "0");
 
     const hours =
-        String(
-            date.getHours()
-        ).padStart(2, "0");
+        String(date.getHours()).padStart(2, "0");
 
     const minutes =
-        String(
-            date.getMinutes()
-        ).padStart(2, "0");
+        String(date.getMinutes()).padStart(2, "0");
 
     return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
 
 /* ============================================================
-   CITY DISPLAY NAME
+   CITY NAME
    ============================================================ */
 
 function cityDisplayName(city) {
@@ -307,6 +296,365 @@ function cityDisplayName(city) {
     }
 
     return city;
+}
+
+
+/* ============================================================
+   AUTH ERROR MESSAGE
+   ============================================================ */
+
+function getAuthErrorMessage(error) {
+
+    const code =
+        error?.code || "";
+
+    if (
+        code.includes("invalid-credential") ||
+        code.includes("wrong-password") ||
+        code.includes("user-not-found")
+    ) {
+        return "Invalid email or password.";
+    }
+
+    if (
+        code.includes("email-already-in-use")
+    ) {
+        return "This email is already registered.";
+    }
+
+    if (
+        code.includes("weak-password")
+    ) {
+        return "Password must be at least 6 characters.";
+    }
+
+    if (
+        code.includes("invalid-email")
+    ) {
+        return "Please enter a valid email.";
+    }
+
+    return error?.message ||
+        "Authentication failed.";
+}
+
+
+/* ============================================================
+   CITY BUTTONS
+   ============================================================ */
+
+cityButtons.forEach(button => {
+
+    button.addEventListener("click", async () => {
+
+        const city =
+            String(
+                button.dataset.city || ""
+            ).toLowerCase();
+
+        if (
+            city !== "surat" &&
+            city !== "navsari"
+        ) {
+            return;
+        }
+
+        selectedCity =
+            city;
+
+        cityButtons.forEach(btn => {
+            btn.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        selectedSlot =
+            null;
+
+        await loadParkingData();
+    });
+});
+
+
+/* ============================================================
+   LOGIN BUTTON
+   ============================================================ */
+
+if (loginNavBtn) {
+
+    loginNavBtn.addEventListener(
+        "click",
+        async () => {
+
+            if (currentUser) {
+
+                try {
+
+                    const {
+                        signOut
+                    } =
+                        window.firebaseAuthModule;
+
+                    await signOut(auth);
+
+                    showToast(
+                        "Logged out successfully."
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Logout error:",
+                        error
+                    );
+
+                    showToast(
+                        "Logout failed."
+                    );
+                }
+
+            } else {
+
+                openModal(
+                    loginModal
+                );
+            }
+        }
+    );
+}
+
+
+/* ============================================================
+   CLOSE LOGIN
+   ============================================================ */
+
+if (closeLoginModal) {
+
+    closeLoginModal.addEventListener(
+        "click",
+        () => {
+            closeModal(loginModal);
+        }
+    );
+}
+
+
+/* ============================================================
+   SHOW SIGNUP
+   ============================================================ */
+
+if (showSignup) {
+
+    showSignup.addEventListener(
+        "click",
+        event => {
+
+            event.preventDefault();
+
+            closeModal(loginModal);
+
+            openModal(signupModal);
+        }
+    );
+}
+
+
+/* ============================================================
+   CLOSE SIGNUP
+   ============================================================ */
+
+if (closeSignupModal) {
+
+    closeSignupModal.addEventListener(
+        "click",
+        () => {
+            closeModal(signupModal);
+        }
+    );
+}
+
+
+/* ============================================================
+   SHOW LOGIN
+   ============================================================ */
+
+if (showLogin) {
+
+    showLogin.addEventListener(
+        "click",
+        event => {
+
+            event.preventDefault();
+
+            closeModal(signupModal);
+
+            openModal(loginModal);
+        }
+    );
+}
+
+
+/* ============================================================
+   LOGIN FORM
+   ============================================================ */
+
+if (loginForm) {
+
+    loginForm.addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            if (!firebaseReady) {
+
+                if (loginError) {
+                    loginError.textContent =
+                        "Firebase is not connected yet.";
+                }
+
+                return;
+            }
+
+            const email =
+                loginEmail?.value.trim();
+
+            const password =
+                loginPassword?.value;
+
+            if (!email || !password) {
+
+                if (loginError) {
+                    loginError.textContent =
+                        "Please enter email and password.";
+                }
+
+                return;
+            }
+
+            try {
+
+                if (loginError) {
+                    loginError.textContent = "";
+                }
+
+                const {
+                    signInWithEmailAndPassword
+                } =
+                    window.firebaseAuthModule;
+
+                await signInWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
+
+                closeModal(
+                    loginModal
+                );
+
+                loginForm.reset();
+
+                showToast(
+                    "Login successful."
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Login error:",
+                    error
+                );
+
+                if (loginError) {
+                    loginError.textContent =
+                        getAuthErrorMessage(error);
+                }
+            }
+        }
+    );
+}
+
+
+/* ============================================================
+   SIGNUP FORM
+   ============================================================ */
+
+if (signupForm) {
+
+    signupForm.addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            if (!firebaseReady) {
+
+                if (signupError) {
+                    signupError.textContent =
+                        "Firebase is not connected yet.";
+                }
+
+                return;
+            }
+
+            const email =
+                signupEmail?.value.trim();
+
+            const password =
+                signupPassword?.value;
+
+            if (!email || !password) {
+
+                if (signupError) {
+                    signupError.textContent =
+                        "Please enter email and password.";
+                }
+
+                return;
+            }
+
+            try {
+
+                if (signupError) {
+                    signupError.textContent = "";
+                }
+
+                const {
+                    createUserWithEmailAndPassword
+                } =
+                    window.firebaseAuthModule;
+
+                await createUserWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
+
+                closeModal(
+                    signupModal
+                );
+
+                signupForm.reset();
+
+                showToast(
+                    "Account created successfully."
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Signup error:",
+                    error
+                );
+
+                if (signupError) {
+                    signupError.textContent =
+                        getAuthErrorMessage(error);
+                }
+            }
+        }
+    );
 }
 
 
@@ -332,7 +680,8 @@ async function updateUserPanel() {
         const {
             ref,
             get
-        } = window.firebaseDatabaseModule;
+        } =
+            window.firebaseDatabaseModule;
 
         const usersRef =
             ref(
@@ -353,7 +702,8 @@ async function updateUserPanel() {
         const users =
             snapshot.val();
 
-        let userData = null;
+        let userData =
+            null;
 
         for (
             const [id, user]
@@ -365,7 +715,8 @@ async function updateUserPanel() {
                 user.email === currentUser.email
             ) {
 
-                userData = user;
+                userData =
+                    user;
 
                 break;
             }
@@ -476,14 +827,16 @@ async function startFirebase() {
             firebaseDatabaseModule;
 
 
-        firebaseReady = true;
+        firebaseReady =
+            true;
 
 
         firebaseAuthModule.onAuthStateChanged(
             auth,
             async user => {
 
-                currentUser = user;
+                currentUser =
+                    user;
 
 
                 if (user) {
@@ -510,7 +863,7 @@ async function startFirebase() {
 
                 await loadParkingData();
 
-                await listenToGate();
+                listenToGate();
             }
         );
 
@@ -523,7 +876,7 @@ async function startFirebase() {
 
         await loadParkingData();
 
-        await listenToGate();
+        listenToGate();
 
 
     } catch (error) {
@@ -533,7 +886,8 @@ async function startFirebase() {
             error
         );
 
-        firebaseReady = false;
+        firebaseReady =
+            false;
 
 
         setParkingStatus(
@@ -543,7 +897,7 @@ async function startFirebase() {
 
 
         showToast(
-            "Firebase connection failed."
+            "Firebase connection failed. Check Console."
         );
     }
 }
@@ -568,7 +922,8 @@ async function loadParkingData() {
         const {
             ref,
             get
-        } = window.firebaseDatabaseModule;
+        } =
+            window.firebaseDatabaseModule;
 
 
         const cityRef =
@@ -610,22 +965,17 @@ async function loadParkingData() {
         );
 
 
-        await updateUserPanel();
-
-
-    } catch (error) {
+    }    catch (error) {
 
         console.error(
             "Parking loading error:",
             error
         );
 
-
         setParkingStatus(
             "Unable to load parking data",
             "error"
         );
-
 
         if (slotContainer) {
 
@@ -651,28 +1001,23 @@ function renderParkingData(cityData) {
     const slots =
         cityData.slots || {};
 
-
     const slotList =
         Object.entries(slots);
-
 
     const available =
         Number(
             parking.available ?? 0
         );
 
-
     const reserved =
         Number(
             parking.reserved ?? 0
         );
 
-
     const occupied =
         Number(
             parking.occupied ?? 0
         );
-
 
     const totalSlots =
         Number(
@@ -686,18 +1031,15 @@ function renderParkingData(cityData) {
             available;
     }
 
-
     if (reservedCount) {
         reservedCount.textContent =
             reserved;
     }
 
-
     if (occupiedCount) {
         occupiedCount.textContent =
             occupied;
     }
-
 
     if (totalCount) {
         totalCount.textContent =
@@ -744,20 +1086,20 @@ function renderParkingData(cityData) {
     );
 
 
-    if (
-        fullMessage &&
-        available === 0
-    ) {
+    if (fullMessage) {
 
-        fullMessage.classList.remove(
-            "hidden"
-        );
+        if (available === 0) {
 
-    } else if (fullMessage) {
+            fullMessage.classList.remove(
+                "hidden"
+            );
 
-        fullMessage.classList.add(
-            "hidden"
-        );
+        } else {
+
+            fullMessage.classList.add(
+                "hidden"
+            );
+        }
     }
 }
 
@@ -808,12 +1150,13 @@ function createSlotCard(
 
 
     if (status === "reserved") {
-        statusText = "Reserved";
+        statusText =
+            "Reserved";
     }
 
-
     if (status === "occupied") {
-        statusText = "Occupied";
+        statusText =
+            "Occupied";
     }
 
 
@@ -844,7 +1187,6 @@ function createSlotCard(
     badge.className =
         `status-badge ${status}`;
 
-
     badge.textContent =
         statusText;
 
@@ -863,17 +1205,18 @@ function createSlotCard(
     );
 
 
-    if (
-        status === "available"
-    ) {
+    /* Available slot */
+
+    if (status === "available") {
 
         const button =
             document.createElement("button");
 
+        button.type =
+            "button";
 
         button.className =
             "slot-action reserve-btn";
-
 
         button.textContent =
             "Reserve Slot";
@@ -899,7 +1242,6 @@ function createSlotCard(
         const unavailable =
             document.createElement("div");
 
-
         unavailable.className =
             "slot-unavailable";
 
@@ -924,9 +1266,7 @@ function createSlotCard(
    RESERVE SLOT
    ============================================================ */
 
-async function reserveSlot(
-    slotId
-) {
+function reserveSlot(slotId) {
 
     if (!firebaseReady) {
 
@@ -1036,6 +1376,48 @@ if (confirmBookingBtn) {
 
 
 /* ============================================================
+   CLOSE BOOKING MODAL
+   ============================================================ */
+
+if (closeBookingModal) {
+
+    closeBookingModal.addEventListener(
+        "click",
+        () => {
+
+            selectedSlot =
+                null;
+
+            closeModal(
+                bookingModal
+            );
+        }
+    );
+}
+
+
+/* ============================================================
+   CLOSE PAYMENT MODAL
+   ============================================================ */
+
+if (closePaymentModal) {
+
+    closePaymentModal.addEventListener(
+        "click",
+        () => {
+
+            selectedSlot =
+                null;
+
+            closeModal(
+                paymentModal
+            );
+        }
+    );
+}
+
+
+/* ============================================================
    PAYMENT + CREATE BOOKING
    ============================================================ */
 
@@ -1103,542 +1485,851 @@ if (payNowBtn) {
                     window.firebaseDatabaseModule;
 
 
-                /* ------------------------------------------------
+                /* =================================================
                    1. CHECK SELECTED SLOT
-                   ------------------------------------------------ */
+                   ================================================= */
 
-                            const slotRef =
-                ref(
-                    db,
-                    `${DATABASE_ROOT}/cities/${selectedCity}/slots/${selectedSlot}`
-                );
-
-
-            const slotSnapshot =
-                await get(slotRef);
-
-
-            if (!slotSnapshot.exists()) {
-
-                throw new Error(
-                    "Selected slot does not exist."
-                );
-            }
-
-
-            const slotData =
-                slotSnapshot.val();
-
-
-            if (
-                String(
-                    slotData.status || ""
-                ).toLowerCase() !== "available"
-            ) {
-
-                throw new Error(
-                    "This slot is no longer available."
-                );
-            }
-
-
-            /*
-             * ------------------------------------------------
-             * 2. READ EXISTING BOOKINGS + PAYMENTS + USERS
-             * ------------------------------------------------
-             */
-
-            const bookingsRef =
-                ref(
-                    db,
-                    `${DATABASE_ROOT}/bookings`
-                );
-
-
-            const paymentsRef =
-                ref(
-                    db,
-                    `${DATABASE_ROOT}/payments`
-                );
-
-
-            const usersRef =
-                ref(
-                    db,
-                    `${DATABASE_ROOT}/users`
-                );
-
-
-            const [
-                bookingsSnapshot,
-                paymentsSnapshot,
-                usersSnapshot
-            ] =
-                await Promise.all([
-                    get(bookingsRef),
-                    get(paymentsRef),
-                    get(usersRef)
-                ]);
-
-
-            const bookings =
-                bookingsSnapshot.exists()
-                    ? bookingsSnapshot.val()
-                    : {};
-
-
-            const payments =
-                paymentsSnapshot.exists()
-                    ? paymentsSnapshot.val()
-                    : {};
-
-
-            const users =
-                usersSnapshot.exists()
-                    ? usersSnapshot.val()
-                    : {};
-
-
-            /*
-             * ------------------------------------------------
-             * 3. CREATE BOOKING ID
-             * ------------------------------------------------
-             */
-
-            const bookingNumbers =
-                Object.keys(bookings)
-                    .filter(
-                        id =>
-                            /^BOOK\d+$/.test(id)
-                    )
-                    .map(
-                        id =>
-                            parseInt(
-                                id.replace(
-                                    "BOOK",
-                                    ""
-                                ),
-                                10
-                            )
-                    )
-                    .filter(
-                        num =>
-                            !isNaN(num)
+                const slotRef =
+                    ref(
+                        db,
+                        `${DATABASE_ROOT}/cities/${selectedCity}/slots/${selectedSlot}`
                     );
 
 
-            const nextBookingNumber =
-                bookingNumbers.length > 0
-                    ? Math.max(
-                        ...bookingNumbers
-                    ) + 1
-                    : 1;
-
-
-            const bookingId =
-                `BOOK${String(
-                    nextBookingNumber
-                ).padStart(3, "0")}`;
-
-
-            /*
-             * ------------------------------------------------
-             * 4. CREATE PAYMENT ID
-             * ------------------------------------------------
-             */
-
-            const paymentNumbers =
-                Object.keys(payments)
-                    .filter(
-                        id =>
-                            /^PAY\d+$/.test(id)
-                    )
-                    .map(
-                        id =>
-                            parseInt(
-                                id.replace(
-                                    "PAY",
-                                    ""
-                                ),
-                                10
-                            )
-                    )
-                    .filter(
-                        num =>
-                            !isNaN(num)
+                const slotSnapshot =
+                    await get(
+                        slotRef
                     );
 
 
-            const nextPaymentNumber =
-                paymentNumbers.length > 0
-                    ? Math.max(
-                        ...paymentNumbers
-                    ) + 1
-                    : 1;
+                if (!slotSnapshot.exists()) {
+
+                    throw new Error(
+                        "Selected slot does not exist."
+                    );
+                }
 
 
-            const paymentId =
-                `PAY${String(
-                    nextPaymentNumber
-                ).padStart(3, "0")}`;
+                const slotData =
+                    slotSnapshot.val();
 
-
-            /*
-             * ------------------------------------------------
-             * 5. FIND EXISTING USER
-             * ------------------------------------------------
-             */
-
-            let userId =
-                null;
-
-
-            for (
-                const [id, user]
-                of Object.entries(users)
-            ) {
 
                 if (
-                    user &&
-                    user.email ===
-                    currentUser.email
+                    String(
+                        slotData.status || ""
+                    ).toLowerCase() !==
+                    "available"
                 ) {
 
-                    userId =
-                        id;
-
-                    break;
+                    throw new Error(
+                        "This slot is no longer available."
+                    );
                 }
-            }
 
 
-            /*
-             * ------------------------------------------------
-             * 6. CREATE UPDATE OBJECT
-             * ------------------------------------------------
-             */
+                /* =================================================
+                   2. READ BOOKINGS
+                   ================================================= */
 
-            const updates =
-                {};
+                const bookingsRef =
+                    ref(
+                        db,
+                        `${DATABASE_ROOT}/bookings`
+                    );
 
 
-            /*
-             * ------------------------------------------------
-             * 7. CREATE USER IF NOT FOUND
-             * ------------------------------------------------
-             */
+                const paymentsRef =
+                    ref(
+                        db,
+                        `${DATABASE_ROOT}/payments`
+                    );
 
-            if (!userId) {
 
-                const userNumbers =
-                    Object.keys(users)
+                const usersRef =
+                    ref(
+                        db,
+                        `${DATABASE_ROOT}/users`
+                    );
+
+
+                const [
+                    bookingsSnapshot,
+                    paymentsSnapshot,
+                    usersSnapshot
+                ] =
+                    await Promise.all([
+                        get(bookingsRef),
+                        get(paymentsRef),
+                        get(usersRef)
+                    ]);
+
+
+                const bookings =
+                    bookingsSnapshot.exists()
+                        ? bookingsSnapshot.val()
+                        : {};
+
+
+                const payments =
+                    paymentsSnapshot.exists()
+                        ? paymentsSnapshot.val()
+                        : {};
+
+
+                const users =
+                    usersSnapshot.exists()
+                        ? usersSnapshot.val()
+                        : {};
+
+
+                /* =================================================
+                   3. BOOKING ID
+                   ================================================= */
+
+                const bookingNumbers =
+                    Object.keys(bookings)
                         .filter(
                             id =>
-                                /^USER\d+$/.test(id)
+                                /^BOOK\d+$/.test(id)
                         )
                         .map(
                             id =>
                                 parseInt(
                                     id.replace(
-                                        "USER",
+                                        "BOOK",
                                         ""
                                     ),
                                     10
                                 )
                         )
                         .filter(
-                            num =>
-                                !isNaN(num)
+                            number =>
+                                !isNaN(number)
                         );
 
 
-                const nextUserNumber =
-                    userNumbers.length > 0
+                const nextBookingNumber =
+                    bookingNumbers.length > 0
                         ? Math.max(
-                            ...userNumbers
+                            ...bookingNumbers
                         ) + 1
                         : 1;
 
 
-                userId =
-                    `USER${String(
-                        nextUserNumber
+                const bookingId =
+                    `BOOK${String(
+                        nextBookingNumber
                     ).padStart(3, "0")}`;
 
 
+                /* =================================================
+                   4. PAYMENT ID
+                   ================================================= */
+
+                const paymentNumbers =
+                    Object.keys(payments)
+                        .filter(
+                            id =>
+                                /^PAY\d+$/.test(id)
+                        )
+                        .map(
+                            id =>
+                                parseInt(
+                                    id.replace(
+                                        "PAY",
+                                        ""
+                                    ),
+                                    10
+                                )
+                        )
+                        .filter(
+                            number =>
+                                !isNaN(number)
+                        );
+
+
+                const nextPaymentNumber =
+                    paymentNumbers.length > 0
+                        ? Math.max(
+                            ...paymentNumbers
+                        ) + 1
+                        : 1;
+
+
+                const paymentId =
+                    `PAY${String(
+                        nextPaymentNumber
+                    ).padStart(3, "0")}`;
+
+
+                /* =================================================
+                   5. FIND USER
+                   ================================================= */
+
+                let userId =
+                    null;
+
+
+                for (
+                    const [id, user]
+                    of Object.entries(users)
+                ) {
+
+                    if (
+                        user &&
+                        user.email ===
+                        currentUser.email
+                    ) {
+
+                        userId =
+                            id;
+
+                        break;
+                    }
+                }
+
+
+                /* =================================================
+                   6. UPDATE OBJECT
+                   ================================================= */
+
+                const updates =
+                    {};
+
+
+                /* =================================================
+                   7. CREATE USER
+                   ================================================= */
+
+                if (!userId) {
+
+                    const userNumbers =
+                        Object.keys(users)
+                            .filter(
+                                id =>
+                                    /^USER\d+$/.test(id)
+                            )
+                            .map(
+                                id =>
+                                    parseInt(
+                                        id.replace(
+                                            "USER",
+                                            ""
+                                        ),
+                                        10
+                                    )
+                            )
+                            .filter(
+                                number =>
+                                    !isNaN(number)
+                            );
+
+
+                    const nextUserNumber =
+                        userNumbers.length > 0
+                            ? Math.max(
+                                ...userNumbers
+                            ) + 1
+                            : 1;
+
+
+                    userId =
+                        `USER${String(
+                            nextUserNumber
+                        ).padStart(3, "0")}`;
+
+
+                    updates[
+                        `${DATABASE_ROOT}/users/${userId}`
+                    ] = {
+
+                        city:
+                            selectedCity,
+
+                        currentBooking:
+                            bookingId,
+
+                        email:
+                            currentUser.email,
+
+                        name:
+                            currentUser.displayName ||
+                            currentUser.email.split("@")[0],
+
+                        phone:
+                            ""
+                    };
+
+
+                } else {
+
+                    updates[
+                        `${DATABASE_ROOT}/users/${userId}`
+                    ] = {
+
+                        ...users[userId],
+
+                        city:
+                            selectedCity,
+
+                        currentBooking:
+                            bookingId
+                    };
+                }
+
+
+                /* =================================================
+                   8. TIME
+                   ================================================= */
+
+                const now =
+                    new Date();
+
+
+                const bookingTime =
+                    formatDateTime(
+                        now
+                    );
+
+
+                const expiryDate =
+                    new Date(
+                        now.getTime() +
+                        15 * 60 * 1000
+                    );
+
+
+                const expiryTime =
+                    formatDateTime(
+                        expiryDate
+                    );
+
+
+                /* =================================================
+                   9. BOOKING
+                   ================================================= */
+
                 updates[
-                    `${DATABASE_ROOT}/users/${userId}`
+                    `${DATABASE_ROOT}/bookings/${bookingId}`
                 ] = {
+
+                    amount:
+                        100,
+
+                    bookingStatus:
+                        "Reserved",
+
+                    bookingTime:
+                        bookingTime,
 
                     city:
                         selectedCity,
 
-                    currentBooking:
+                    expiryTime:
+                        expiryTime,
+
+                    paymentStatus:
+                        "Paid",
+
+                    refundStatus:
+                        "Not Refunded",
+
+                    slot:
+                        selectedSlot,
+
+                    userId:
+                        userId
+                };
+
+
+                /* =================================================
+                   10. PAYMENT
+                   ================================================= */
+
+                updates[
+                    `${DATABASE_ROOT}/payments/${paymentId}`
+                ] = {
+
+                    amount:
+                        100,
+
+                    bookingId:
                         bookingId,
 
-                    email:
-                        currentUser.email,
+                    method:
+                        "Demo Payment",
 
-                    name:
-                        currentUser.displayName ||
-                        currentUser.email.split("@")[0],
-
-                    phone:
-                        ""
+                    status:
+                        "Paid"
                 };
 
 
-            } else {
+                /* =================================================
+                   11. SLOT = RESERVED
+                   ================================================= */
 
                 updates[
-                    `${DATABASE_ROOT}/users/${userId}`
-                ] = {
+                    `${DATABASE_ROOT}/cities/${selectedCity}/slots/${selectedSlot}/status`
+                ] =
+                    "reserved";
 
-                    ...users[userId],
 
-                    city:
-                        selectedCity,
+                /* =================================================
+                   12. PARKING COUNTS
+                   ================================================= */
 
-                    currentBooking:
-                        bookingId
-                };
+                const parkingRef =
+                    ref(
+                        db,
+                        `${DATABASE_ROOT}/cities/${selectedCity}/parking`
+                    );
+
+
+                const parkingSnapshot =
+                    await get(
+                        parkingRef
+                    );
+
+
+                if (
+                    parkingSnapshot.exists()
+                ) {
+
+                    const parking =
+                        parkingSnapshot.val();
+
+
+                    const currentAvailable =
+                        Number(
+                            parking.available ?? 0
+                        );
+
+
+                    const currentReserved =
+                        Number(
+                            parking.reserved ?? 0
+                        );
+
+
+                    updates[
+                        `${DATABASE_ROOT}/cities/${selectedCity}/parking/available`
+                    ] =
+                        Math.max(
+                            0,
+                            currentAvailable - 1
+                        );
+
+
+                    updates[
+                        `${DATABASE_ROOT}/cities/${selectedCity}/parking/reserved`
+                    ] =
+                        currentReserved + 1;
+                }
+
+
+                /* =================================================
+                   13. SAVE
+                   ================================================= */
+
+                await update(
+                    ref(db),
+                    updates
+                );
+
+
+                /* =================================================
+                   14. SUCCESS
+                   ================================================= */
+
+                closeModal(
+                    paymentModal
+                );
+
+
+                selectedSlot =
+                    null;
+
+
+                showToast(
+                    `Booking confirmed! ${bookingId}`
+                );
+
+
+                await loadParkingData();
+
+                await updateUserPanel();
+
+
+                payNowBtn.disabled =
+                    false;
+
+                payNowBtn.textContent =
+                    "Pay Now";
+
+
+            } catch (error) {
+
+                console.error(
+                    "Booking/payment error:",
+                    error
+                );
+
+
+                showToast(
+                    error.message ||
+                    "Booking failed. Please try again."
+                );
+
+
+                payNowBtn.disabled =
+                    false;
+
+                payNowBtn.textContent =
+                    "Pay Now";
             }
+        }
+    );
+}
 
 
-            /*
-             * ------------------------------------------------
-             * 8. CREATE TIME
-             * ------------------------------------------------
-             */
+/* ============================================================
+   ARRIVAL BUTTON
+   ============================================================ */
 
-            const now =
-                new Date();
+if (arriveBtn) {
 
-
-            const bookingTime =
-                formatDateTime(
-                    now
-                );
-
-
-            const expiryDate =
-                new Date(
-                    now.getTime() +
-                    15 * 60 * 1000
-                );
-
-
-            const expiryTime =
-                formatDateTime(
-                    expiryDate
-                );
-
-
-            /*
-             * ------------------------------------------------
-             * 9. CREATE BOOKING
-             * ------------------------------------------------
-             */
-
-            updates[
-                `${DATABASE_ROOT}/bookings/${bookingId}`
-            ] = {
-
-                amount:
-                    100,
-
-                bookingStatus:
-                    "Reserved",
-
-                bookingTime:
-                    bookingTime,
-
-                city:
-                    selectedCity,
-
-                expiryTime:
-                    expiryTime,
-
-                paymentStatus:
-                    "Paid",
-
-                refundStatus:
-                    "Not Refunded",
-
-                slot:
-                    selectedSlot,
-
-                userId:
-                    userId
-            };
-
-
-            /*
-             * ------------------------------------------------
-             * 10. CREATE PAYMENT
-             * ------------------------------------------------
-             */
-
-            updates[
-                `${DATABASE_ROOT}/payments/${paymentId}`
-            ] = {
-
-                amount:
-                    100,
-
-                bookingId:
-                    bookingId,
-
-                method:
-                    "Demo Payment",
-
-                status:
-                    "Paid"
-            };
-
-
-            /*
-             * ------------------------------------------------
-             * 11. CHANGE SLOT TO RESERVED
-             * ------------------------------------------------
-             */
-
-            updates[
-                `${DATABASE_ROOT}/cities/${selectedCity}/slots/${selectedSlot}/status`
-            ] =
-                "reserved";
-
-
-            /*
-             * ------------------------------------------------
-             * 12. UPDATE PARKING COUNTS
-             * ------------------------------------------------
-             */
-
-            const parkingRef =
-                ref(
-                    db,
-                    `${DATABASE_ROOT}/cities/${selectedCity}/parking`
-                );
-
-
-            const parkingSnapshot =
-                await get(
-                    parkingRef
-                );
-
+    arriveBtn.addEventListener(
+        "click",
+        async () => {
 
             if (
-                parkingSnapshot.exists()
+                !firebaseReady ||
+                !db ||
+                !currentUser
             ) {
 
-                const parking =
-                    parkingSnapshot.val();
+                showToast(
+                    "Please login first."
+                );
 
-
-                const currentAvailable =
-                    Number(
-                        parking.available ??
-                        0
-                    );
-
-
-                const currentReserved =
-                    Number(
-                        parking.reserved ??
-                        0
-                    );
-
-
-                updates[
-                    `${DATABASE_ROOT}/cities/${selectedCity}/parking/available`
-                ] =
-                    Math.max(
-                        0,
-                        currentAvailable - 1
-                    );
-
-
-                updates[
-                    `${DATABASE_ROOT}/cities/${selectedCity}/parking/reserved`
-                ] =
-                    currentReserved + 1;
+                return;
             }
 
 
-            /*
-             * ------------------------------------------------
-             * 13. SAVE EVERYTHING TO FIREBASE
-             * ------------------------------------------------
-             */
+            try {
 
-            await update(
-                ref(db),
-                updates
-            );
+                const {
+                    ref,
+                    get,
+                    update
+                } =
+                    window.firebaseDatabaseModule;
 
 
-            /*
-             * ------------------------------------------------
-             * 14. SUCCESS
-             * ------------------------------------------------
-             */
-
-            closeModal(
-                paymentModal
-            );
+                const usersRef =
+                    ref(
+                        db,
+                        `${DATABASE_ROOT}/users`
+                    );
 
 
-            selectedSlot =
-                null;
+                const usersSnapshot =
+                    await get(
+                        usersRef
+                    );
 
 
-            showToast(
-                `Booking confirmed! ${bookingId}`
-            );
+                if (
+                    !usersSnapshot.exists()
+                ) {
+
+                    showToast(
+                        "User record not found."
+                    );
+
+                    return;
+                }
 
 
-            await loadParkingData();
+                const users =
+                    usersSnapshot.val();
 
 
-            await updateUserPanel();
+                let userData =
+                    null;
 
 
-            /*
-             * ------------------------------------------------
-             * 15. RESET PAYMENT BUTTON
-             * ------------------------------------------------
-             */
+                for (
+                    const user
+                    of Object.values(users)
+                ) {
 
-            payNowBtn.disabled =
-                false;
+                    if (
+                        user &&
+                        user.email ===
+                        currentUser.email
+                    ) {
 
+                        userData =
+                            user;
 
-            payNowBtn.textContent =
-                "Pay Now";
-
-
-        } catch (error) {
-
-            console.error(
-                "Booking/payment error:",
-                error
-            );
+                        break;
+                    }
+                }
 
 
-            showToast(
-                error.message ||
-                "Booking failed. Please try again."
-            );
+                if (
+                    !userData ||
+                    !userData.currentBooking
+                ) {
+
+                    showToast(
+                        "You do not have an active booking."
+                    );
+
+                    return;
+                }
 
 
-            payNowBtn.disabled =
-                false;
+                const bookingId =
+                    userData.currentBooking;
 
 
-            payNowBtn.textContent =
-                "Pay Now";
+                const bookingRef =
+                    ref(
+                        db,
+                        `${DATABASE_ROOT}/bookings/${bookingId}`
+                    );
+
+
+                const bookingSnapshot =
+                    await get(
+                        bookingRef
+                    );
+
+
+                if (
+                    !bookingSnapshot.exists()
+                ) {
+
+                    showToast(
+                        "Booking not found."
+                    );
+
+                    return;
+                }
+
+
+                const booking =
+                    bookingSnapshot.val();
+
+
+                if (
+                    String(
+                        booking.bookingStatus || ""
+                    ).toLowerCase() !==
+                    "reserved"
+                ) {
+
+                    showToast(
+                        "This booking cannot be used for entry."
+                    );
+
+                    return;
+                }
+
+
+                const updates =
+                    {};
+
+
+                updates[
+                    `${DATABASE_ROOT}/bookings/${bookingId}/bookingStatus`
+                ] =
+                    "Arrived";
+
+
+                updates[
+                    `${DATABASE_ROOT}/bookings/${bookingId}/arrivalStatus`
+                ] =
+                    "Arrived";
+
+
+                updates[
+                    `${DATABASE_ROOT}/gate/open`
+                ] =
+                    true;
+
+
+                updates[
+                    `${DATABASE_ROOT}/gate/status`
+                ] =
+                    "open";
+
+
+                await update(
+                    ref(db),
+                    updates
+                );
+
+
+                showToast(
+                    "Arrival confirmed. Entry gate opened."
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Arrival error:",
+                    error
+                );
+
+
+                showToast(
+                    "Unable to confirm arrival."
+                );
+            }
         }
+    );
+}
+
+
+/* ============================================================
+   GATE LISTENER
+   ============================================================ */
+
+function listenToGate() {
+
+    if (
+        !firebaseReady ||
+        !db ||
+        gateListenerStarted
+    ) {
+        return;
+    }
+
+
+    gateListenerStarted =
+        true;
+
+
+    const {
+        ref,
+        onValue
+    } =
+        window.firebaseDatabaseModule;
+
+
+    const gateRef =
+        ref(
+            db,
+            `${DATABASE_ROOT}/gate`
+        );
+
+
+    onValue(
+        gateRef,
+        snapshot => {
+
+            const gateData =
+                snapshot.exists()
+                    ? snapshot.val()
+                    : {};
+
+
+            const isOpen =
+                gateData.open === true ||
+                String(
+                    gateData.status || ""
+                ).toLowerCase() ===
+                "open";
+
+
+            updateGateUI(
+                isOpen
+            );
+        }
+    );
+}
+
+
+/* ============================================================
+   GATE UI
+   ============================================================ */
+
+function updateGateUI(isOpen) {
+
+    if (gatePanel) {
+
+        gatePanel.classList.remove(
+            "hidden"
+        );
+    }
+
+
+    if (gateIcon) {
+
+        gateIcon.textContent =
+            isOpen
+                ? "OPEN"
+                : "CLOSED";
+    }
+
+
+    if (gateStatusText) {
+
+        gateStatusText.textContent =
+            isOpen
+                ? "Gate Open"
+                : "Gate Closed";
+    }
+
+
+    if (gateStatusMessage) {
+
+        gateStatusMessage.textContent =
+            isOpen
+                ? "Entry gate is open."
+                : "Entry gate is closed. Confirm arrival to open it.";
+    }
+}
+
+
+/* ============================================================
+   INITIAL CITY
+   ============================================================ */
+
+cityButtons.forEach(
+    button => {
+
+        const city =
+            String(
+                button.dataset.city || ""
+            ).toLowerCase();
+
+
+        if (
+            city === selectedCity
+        ) {
+
+            button.classList.add(
+                "active"
+            );
+        }
+    }
+);
+
+
+/* ============================================================
+   START APPLICATION
+   ============================================================ */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        startFirebase();
 
     }
 );
