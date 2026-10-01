@@ -1,52 +1,7 @@
 // ======================================================
 // SMART PARKING SYSTEM
-// Firebase + Login + City Selection + Live Parking
+// FINAL SCRIPT
 // ======================================================
-
-// ---------------- FIREBASE IMPORTS ----------------
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-
-import {
-    getAuth,
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-
-import {
-    getDatabase,
-    ref,
-    onValue,
-    get,
-    update
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
-
-
-// ======================================================
-// FIREBASE CONFIG
-// ======================================================
-
-const firebaseConfig = {
-    apiKey: "AIzaSyDCa1T-htDrZsGygxNbKkZxbrYEhF5JYRQ",
-    authDomain: "smart-parking-system-d46c9.firebaseapp.com",
-    databaseURL: "https://smart-parking-system-d46c9-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "smart-parking-system-d46c9",
-    storageBucket: "smart-parking-system-d46c9.firebasestorage.app",
-    messagingSenderId: "456268505088",
-    appId: "1:456268505088:web:e577fac7746f3a9bc2f8e5",
-    measurementId: "G-DH2755KD5Z"
-};
-
-
-// ======================================================
-// INITIALIZE FIREBASE
-// ======================================================
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
-
 
 // ======================================================
 // GLOBAL VARIABLES
@@ -56,6 +11,11 @@ let selectedCity = "surat";
 let currentUser = null;
 let currentSlots = {};
 let currentReservation = null;
+
+let auth = null;
+let db = null;
+
+let firebaseReady = false;
 
 
 // ======================================================
@@ -116,10 +76,27 @@ const toast = document.getElementById("toast");
 
 
 // ======================================================
-// TOAST MESSAGE
+// FIREBASE CONFIG
+// ======================================================
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDCa1T-htDrZsGygxNbKkZxbrYEhF5JYRQ",
+    authDomain: "smart-parking-system-d46c9.firebaseapp.com",
+    databaseURL: "https://smart-parking-system-d46c9-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "smart-parking-system-d46c9",
+    storageBucket: "smart-parking-system-d46c9.firebasestorage.app",
+    messagingSenderId: "456268505088",
+    appId: "1:456268505088:web:e577fac7746f3a9bc2f8e5",
+    measurementId: "G-DH2755KD5Z"
+};
+
+
+// ======================================================
+// TOAST
 // ======================================================
 
 function showToast(message) {
+
     if (!toast) return;
 
     toast.textContent = message;
@@ -132,34 +109,74 @@ function showToast(message) {
 
 
 // ======================================================
-// MODAL FUNCTIONS
+// LOGIN MODAL
 // ======================================================
 
 function openLogin() {
+
+    if (!loginModal) return;
+
     loginModal.classList.remove("hidden");
-    loginError.textContent = "";
+
+    if (loginError) {
+        loginError.textContent = "";
+    }
 }
+
 
 function closeLogin() {
+
+    if (!loginModal) return;
+
     loginModal.classList.add("hidden");
 }
+
+
+// ======================================================
+// SIGNUP MODAL
+// ======================================================
 
 function openSignup() {
-    loginModal.classList.add("hidden");
+
+    if (!signupModal) return;
+
+    if (loginModal) {
+        loginModal.classList.add("hidden");
+    }
+
     signupModal.classList.remove("hidden");
-    signupError.textContent = "";
+
+    if (signupError) {
+        signupError.textContent = "";
+    }
 }
 
+
 function closeSignup() {
+
+    if (!signupModal) return;
+
     signupModal.classList.add("hidden");
 }
 
+
+// ======================================================
+// BOOKING / PAYMENT
+// ======================================================
+
 function closeBooking() {
-    bookingModal.classList.add("hidden");
+
+    if (bookingModal) {
+        bookingModal.classList.add("hidden");
+    }
 }
 
+
 function closePayment() {
-    paymentModal.classList.add("hidden");
+
+    if (paymentModal) {
+        paymentModal.classList.add("hidden");
+    }
 }
 
 
@@ -168,44 +185,92 @@ function closePayment() {
 // ======================================================
 
 if (loginNavBtn) {
-    loginNavBtn.addEventListener("click", () => {
 
-        if (currentUser) {
-            signOut(auth)
-                .then(() => {
-                    showToast("Logged out successfully");
-                })
-                .catch((error) => {
-                    console.error(error);
-                    showToast("Logout failed");
-                });
-        } else {
+    loginNavBtn.addEventListener("click", async () => {
+
+        if (!currentUser) {
+
             openLogin();
+
+            return;
+        }
+
+        if (!auth) {
+
+            return;
+        }
+
+        try {
+
+            const { signOut } =
+                await import(
+                    "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"
+                );
+
+            await signOut(auth);
+
+            showToast("Logged out successfully");
+
+        } catch (error) {
+
+            console.error("Logout error:", error);
+
+            showToast("Logout failed");
+
         }
 
     });
+
 }
 
 
 // ======================================================
-// CLOSE BUTTONS
+// CITY BUTTONS
 // ======================================================
 
-if (closeLoginModal) {
-    closeLoginModal.addEventListener("click", closeLogin);
-}
+cityButtons.forEach((button) => {
 
-if (closeSignupModal) {
-    closeSignupModal.addEventListener("click", closeSignup);
-}
+    button.addEventListener("click", () => {
 
-if (closeBookingModal) {
-    closeBookingModal.addEventListener("click", closeBooking);
-}
+        const city = button.dataset.city;
 
-if (closePaymentModal) {
-    closePaymentModal.addEventListener("click", closePayment);
-}
+        if (!city) return;
+
+        selectedCity = city;
+
+        cityButtons.forEach((btn) => {
+            btn.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        if (selectedCityName) {
+
+            selectedCityName.textContent =
+                city === "surat"
+                    ? "Surat Parking"
+                    : "Navsari Parking";
+
+        }
+
+        // If Firebase is ready, load data
+        if (firebaseReady) {
+
+            loadParkingData();
+            listenToGate();
+
+        } else {
+
+            if (parkingStatus) {
+                parkingStatus.textContent =
+                    "Firebase is still connecting...";
+            }
+
+        }
+
+    });
+
+});
 
 
 // ======================================================
@@ -213,10 +278,15 @@ if (closePaymentModal) {
 // ======================================================
 
 if (showSignup) {
+
     showSignup.addEventListener("click", (event) => {
+
         event.preventDefault();
+
         openSignup();
+
     });
+
 }
 
 
@@ -225,120 +295,190 @@ if (showSignup) {
 // ======================================================
 
 if (showLogin) {
+
     showLogin.addEventListener("click", (event) => {
+
         event.preventDefault();
+
         closeSignup();
         openLogin();
+
     });
+
 }
 
 
 // ======================================================
-// LOGIN
+// CLOSE BUTTONS
+// ======================================================
+
+if (closeLoginModal) {
+    closeLoginModal.addEventListener(
+        "click",
+        closeLogin
+    );
+}
+
+if (closeSignupModal) {
+    closeSignupModal.addEventListener(
+        "click",
+        closeSignup
+    );
+}
+
+if (closeBookingModal) {
+    closeBookingModal.addEventListener(
+        "click",
+        closeBooking
+    );
+}
+
+if (closePaymentModal) {
+    closePaymentModal.addEventListener(
+        "click",
+        closePayment
+    );
+}
+
+
+// ======================================================
+// LOGIN FORM
 // ======================================================
 
 if (loginForm) {
 
-    loginForm.addEventListener("submit", async (event) => {
+    loginForm.addEventListener(
+        "submit",
+        async (event) => {
 
-        event.preventDefault();
+            event.preventDefault();
 
-        const email = loginEmail.value.trim();
-        const password = loginPassword.value;
+            if (!auth) {
 
-        loginError.textContent = "";
+                loginError.textContent =
+                    "Firebase is not ready yet.";
 
-        if (!email || !password) {
-            loginError.textContent = "Please enter email and password.";
-            return;
+                return;
+            }
+
+            const email =
+                loginEmail.value.trim();
+
+            const password =
+                loginPassword.value;
+
+            loginError.textContent = "";
+
+            try {
+
+                const {
+                    signInWithEmailAndPassword
+                } = await import(
+                    "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"
+                );
+
+                await signInWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
+
+                closeLogin();
+
+                loginForm.reset();
+
+                showToast("Login successful");
+
+            } catch (error) {
+
+                console.error(error);
+
+                loginError.textContent =
+                    getFirebaseError(error);
+
+            }
+
         }
-
-        try {
-
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
-
-            closeLogin();
-
-            loginForm.reset();
-
-            showToast("Login successful");
-
-        } catch (error) {
-
-            console.error("Login error:", error);
-
-            loginError.textContent = getFirebaseError(error);
-
-        }
-
-    });
+    );
 
 }
 
 
 // ======================================================
-// SIGNUP
+// SIGNUP FORM
 // ======================================================
 
 if (signupForm) {
 
-    signupForm.addEventListener("submit", async (event) => {
+    signupForm.addEventListener(
+        "submit",
+        async (event) => {
 
-        event.preventDefault();
+            event.preventDefault();
 
-        const email = signupEmail.value.trim();
-        const password = signupPassword.value;
+            if (!auth) {
 
-        signupError.textContent = "";
+                signupError.textContent =
+                    "Firebase is not ready yet.";
 
-        if (!email || !password) {
-            signupError.textContent =
-                "Please enter email and password.";
+                return;
+            }
 
-            return;
+            const email =
+                signupEmail.value.trim();
+
+            const password =
+                signupPassword.value;
+
+            signupError.textContent = "";
+
+            if (password.length < 6) {
+
+                signupError.textContent =
+                    "Password must contain at least 6 characters.";
+
+                return;
+            }
+
+            try {
+
+                const {
+                    createUserWithEmailAndPassword
+                } = await import(
+                    "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"
+                );
+
+                await createUserWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
+
+                closeSignup();
+
+                signupForm.reset();
+
+                showToast(
+                    "Account created successfully"
+                );
+
+            } catch (error) {
+
+                console.error(error);
+
+                signupError.textContent =
+                    getFirebaseError(error);
+
+            }
+
         }
-
-        if (password.length < 6) {
-            signupError.textContent =
-                "Password must contain at least 6 characters.";
-
-            return;
-        }
-
-        try {
-
-            await createUserWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
-
-            closeSignup();
-
-            signupForm.reset();
-
-            showToast("Account created successfully");
-
-        } catch (error) {
-
-            console.error("Signup error:", error);
-
-            signupError.textContent =
-                getFirebaseError(error);
-
-        }
-
-    });
+    );
 
 }
 
 
 // ======================================================
-// FIREBASE ERROR MESSAGE
+// FIREBASE ERROR
 // ======================================================
 
 function getFirebaseError(error) {
@@ -358,160 +498,199 @@ function getFirebaseError(error) {
             return "This email is already registered.";
 
         case "auth/invalid-email":
-            return "Please enter a valid email.";
+            return "Invalid email address.";
 
         case "auth/weak-password":
-            return "Password is too weak.";
+            return "Password must contain at least 6 characters.";
 
         default:
-            return error.message || "Something went wrong.";
+            return error.message ||
+                "Something went wrong.";
 
     }
+
 }
 
 
 // ======================================================
-// AUTH STATE
+// FIREBASE INITIALIZATION
 // ======================================================
 
-onAuthStateChanged(auth, (user) => {
+async function startFirebase() {
 
-    currentUser = user;
+    try {
 
-    if (user) {
+        parkingStatus.textContent =
+            "Connecting to Firebase...";
 
-        loginNavBtn.textContent = "Logout";
+        const {
+            initializeApp
+        } = await import(
+            "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"
+        );
 
-        console.log("Logged in:", user.email);
+        const {
+            getAuth,
+            onAuthStateChanged
+        } = await import(
+            "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"
+        );
 
-    } else {
+        const {
+            getDatabase
+        } = await import(
+            "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js"
+        );
 
-        loginNavBtn.textContent = "Login";
+        const app =
+            initializeApp(firebaseConfig);
 
-        console.log("No user logged in.");
+        auth = getAuth(app);
+
+        db = getDatabase(app);
+
+        firebaseReady = true;
+
+        console.log(
+            "Firebase initialized successfully."
+        );
+
+        onAuthStateChanged(
+            auth,
+            (user) => {
+
+                currentUser = user;
+
+                if (loginNavBtn) {
+
+                    loginNavBtn.textContent =
+                        user
+                            ? "Logout"
+                            : "Login";
+
+                }
+
+                findMyReservation();
+
+            }
+        );
+
+        loadParkingData();
+
+        listenToGate();
+
+    } catch (error) {
+
+        console.error(
+            "Firebase initialization error:",
+            error
+        );
+
+        parkingStatus.textContent =
+            "Firebase connection failed.";
+
+        parkingStatus.classList.add("error");
+
+        slotContainer.innerHTML = `
+            <p>
+                Firebase could not be loaded.
+            </p>
+        `;
 
     }
 
-    findMyReservation();
-
-});
+}
 
 
 // ======================================================
-// CITY BUTTONS
+// LOAD PARKING DATA
 // ======================================================
 
-cityButtons.forEach((button) => {
+async function loadParkingData() {
 
-    button.addEventListener("click", () => {
+    if (!db) return;
 
-        const city = button.dataset.city;
+    try {
 
-        if (!city) return;
+        const {
+            ref,
+            onValue
+        } = await import(
+            "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js"
+        );
 
-        selectedCity = city;
+        const slotsRef =
+            ref(
+                db,
+                `cities/${selectedCity}/slots`
+            );
 
-        // Remove active from all buttons
-        cityButtons.forEach((btn) => {
-            btn.classList.remove("active");
-        });
+        onValue(
+            slotsRef,
 
-        // Activate clicked button
-        button.classList.add("active");
+            (snapshot) => {
 
-        // Change heading
-        selectedCityName.textContent =
-            city === "surat"
-                ? "Surat Parking"
-                : "Navsari Parking";
+                if (!snapshot.exists()) {
 
-        // Load selected city's Firebase data
-        loadParkingData();
+                    parkingStatus.textContent =
+                        "No parking slot data found.";
 
-        // Load selected city's gate
-        listenToGate();
+                    currentSlots = {};
 
-    });
+                    renderSlots();
 
-});
+                    return;
+                }
 
-
-// ======================================================
-// PARKING DATA
-// ======================================================
-
-function loadParkingData() {
-
-    parkingStatus.textContent =
-        "Connecting to Firebase...";
-
-    parkingStatus.classList.remove("success");
-    parkingStatus.classList.remove("error");
-
-    slotContainer.innerHTML =
-        "<p>Loading parking slots...</p>";
-
-    const slotsRef =
-        ref(db, `cities/${selectedCity}/slots`);
-
-    onValue(
-        slotsRef,
-
-        (snapshot) => {
-
-            if (!snapshot.exists()) {
+                currentSlots =
+                    snapshot.val();
 
                 parkingStatus.textContent =
-                    "No parking slot data found.";
+                    "Firebase connected";
 
-                parkingStatus.classList.add("error");
-
-                currentSlots = {};
+                parkingStatus.classList.add(
+                    "success"
+                );
 
                 renderSlots();
 
-                return;
+                findMyReservation();
+
+            },
+
+            (error) => {
+
+                console.error(error);
+
+                parkingStatus.textContent =
+                    "Firebase connection failed.";
+
+                parkingStatus.classList.add(
+                    "error"
+                );
+
             }
+        );
 
-            currentSlots = snapshot.val();
+    } catch (error) {
 
-            parkingStatus.textContent =
-                "Firebase connected";
+        console.error(
+            "Parking data error:",
+            error
+        );
 
-            parkingStatus.classList.add("success");
-
-            renderSlots();
-
-            findMyReservation();
-
-        },
-
-        (error) => {
-
-            console.error(
-                "Firebase database error:",
-                error
-            );
-
-            parkingStatus.textContent =
-                "Firebase connection failed.";
-
-            parkingStatus.classList.add("error");
-
-            slotContainer.innerHTML =
-                "<p>Unable to load parking slots.</p>";
-
-        }
-    );
+    }
 
 }
 
 
 // ======================================================
-// RENDER PARKING SLOTS
+// RENDER SLOTS
 // ======================================================
 
 function renderSlots() {
+
+    if (!slotContainer) return;
 
     slotContainer.innerHTML = "";
 
@@ -527,26 +706,26 @@ function renderSlots() {
 
     slotNames.forEach((slotName) => {
 
-        const slot = currentSlots[slotName];
+        const slot =
+            currentSlots[slotName];
 
         const status =
             slot?.status || "available";
 
-        if (status === "available") {
+        if (status === "available")
             available++;
-        }
 
-        if (status === "reserved") {
+        if (status === "reserved")
             reserved++;
-        }
 
-        if (status === "occupied") {
+        if (status === "occupied")
             occupied++;
-        }
 
-        const card = document.createElement("div");
+        const card =
+            document.createElement("div");
 
-        card.className = "slot-card";
+        card.className =
+            "slot-card";
 
         card.innerHTML = `
             <div class="slot-number">
@@ -559,14 +738,14 @@ function renderSlots() {
 
             ${
                 status === "available"
-                ? `
-                    <button
-                        class="reserve-btn"
-                        data-slot="${slotName}">
-                        Reserve Slot
-                    </button>
-                  `
-                : ""
+                    ? `
+                        <button
+                            class="reserve-btn"
+                            data-slot="${slotName}">
+                            Reserve Slot
+                        </button>
+                    `
+                    : ""
             }
         `;
 
@@ -574,33 +753,45 @@ function renderSlots() {
 
     });
 
-    availableCount.textContent = available;
-    reservedCount.textContent = reserved;
-    occupiedCount.textContent = occupied;
-    totalCount.textContent = 3;
+    availableCount.textContent =
+        available;
+
+    reservedCount.textContent =
+        reserved;
+
+    occupiedCount.textContent =
+        occupied;
+
+    totalCount.textContent = "3";
 
     if (available === 0) {
 
-        fullMessage.classList.remove("hidden");
+        fullMessage.classList.remove(
+            "hidden"
+        );
 
     } else {
 
-        fullMessage.classList.add("hidden");
+        fullMessage.classList.add(
+            "hidden"
+        );
 
     }
 
-    // Reserve buttons
-    document.querySelectorAll(".reserve-btn")
+    document
+        .querySelectorAll(".reserve-btn")
         .forEach((button) => {
 
-            button.addEventListener("click", () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                const slot =
-                    button.dataset.slot;
+                    reserveSlot(
+                        button.dataset.slot
+                    );
 
-                reserveSlot(slot);
-
-            });
+                }
+            );
 
         });
 
@@ -630,30 +821,41 @@ async function reserveSlot(slotId) {
         openLogin();
 
         showToast(
-            "Please login before reserving a slot."
+            "Please login before reserving."
         );
 
         return;
     }
 
-    const slotRef =
-        ref(
-            db,
-            `cities/${selectedCity}/slots/${slotId}`
-        );
-
     try {
 
-        const snapshot = await get(slotRef);
+        const {
+            ref,
+            get
+        } = await import(
+            "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js"
+        );
+
+        const slotRef =
+            ref(
+                db,
+                `cities/${selectedCity}/slots/${slotId}`
+            );
+
+        const snapshot =
+            await get(slotRef);
 
         if (!snapshot.exists()) {
 
-            showToast("Slot does not exist.");
+            showToast(
+                "Slot does not exist."
+            );
 
             return;
         }
 
-        const slot = snapshot.val();
+        const slot =
+            snapshot.val();
 
         if (slot.status !== "available") {
 
@@ -670,22 +872,27 @@ async function reserveSlot(slotId) {
                 : "Navsari";
 
         bookingSlot.textContent =
-            slotId.replace("slot", "Slot ");
+            slotId.replace(
+                "slot",
+                "Slot "
+            );
 
         bookingUser.textContent =
             currentUser.email;
 
-        bookingModal.classList.remove("hidden");
-
         confirmBookingBtn.dataset.slot =
             slotId;
+
+        bookingModal.classList.remove(
+            "hidden"
+        );
 
     } catch (error) {
 
         console.error(error);
 
         showToast(
-            "Unable to check parking slot."
+            "Unable to check slot."
         );
 
     }
@@ -731,77 +938,59 @@ if (payNowBtn) {
         "click",
         async () => {
 
-            const slotId =
-                confirmBookingBtn.dataset.slot;
+                        if (!currentUser) {
 
-            if (!slotId || !currentUser) {
-
-                showToast(
-                    "Booking information missing."
-                );
+                openLogin();
 
                 return;
             }
 
-            const slotRef =
-                ref(
-                    db,
-                    `cities/${selectedCity}/slots/${slotId}`
-                );
-
-            const bookingData = {
-
-                status: "reserved",
-
-                bookedBy: currentUser.uid,
-
-                bookedEmail:
-                    currentUser.email,
-
-                bookingTime:
-                    Date.now(),
-
-                expiryTime:
-                    Date.now() +
-                    (2 * 60 * 60 * 1000),
-
-                paymentStatus: "paid",
-
-                paymentAmount: 50
-
-            };
+            const slotId =
+                confirmBookingBtn.dataset.slot;
 
             try {
+
+                const {
+                    ref,
+                    get,
+                    update
+                } = await import(
+                    "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js"
+                );
+
+                const slotRef =
+                    ref(
+                        db,
+                        `cities/${selectedCity}/slots/${slotId}`
+                    );
 
                 const snapshot =
                     await get(slotRef);
 
-                if (!snapshot.exists()) {
-
-                    showToast(
-                        "Slot does not exist."
-                    );
-
-                    return;
-                }
-
                 if (
-                    snapshot.val().status !==
-                    "available"
+                    !snapshot.exists() ||
+                    snapshot.val().status !== "available"
                 ) {
 
                     showToast(
                         "Slot is no longer available."
                     );
 
-                    closePayment();
-
                     return;
                 }
 
                 await update(
                     slotRef,
-                    bookingData
+                    {
+                        status: "reserved",
+                        bookedBy: currentUser.uid,
+                        bookedEmail: currentUser.email,
+                        bookingTime: Date.now(),
+                        expiryTime:
+                            Date.now() + 2 * 60 * 60 * 1000,
+                        paymentStatus: "paid",
+                        paymentAmount: 50
+                    }
                 );
 
                 closePayment();
@@ -811,8 +1000,6 @@ if (payNowBtn) {
                     "Parking slot reserved successfully."
                 );
 
-                findMyReservation();
-
             } catch (error) {
 
                 console.error(
@@ -821,9 +1008,8 @@ if (payNowBtn) {
                 );
 
                 showToast(
-                    "Booking failed. Please try again."
+                    "Booking failed."
                 );
-
             }
 
         }
@@ -833,24 +1019,27 @@ if (payNowBtn) {
 
 
 // ======================================================
-// FIND CURRENT USER'S RESERVATION
+// FIND MY RESERVATION
 // ======================================================
 
 async function findMyReservation() {
 
-    currentReservation = null;
-
-    arrivalPanel.classList.add("hidden");
-
-    if (!currentUser) return;
-
-    const slotsRef =
-        ref(
-            db,
-            `cities/${selectedCity}/slots`
-        );
+    if (!currentUser || !db) return;
 
     try {
+
+        const {
+            ref,
+            get
+        } = await import(
+            "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js"
+        );
+
+        const slotsRef =
+            ref(
+                db,
+                `cities/${selectedCity}/slots`
+            );
 
         const snapshot =
             await get(slotsRef);
@@ -858,6 +1047,8 @@ async function findMyReservation() {
         if (!snapshot.exists()) return;
 
         const slots = snapshot.val();
+
+        currentReservation = null;
 
         Object.keys(slots).forEach((slotId) => {
 
@@ -867,28 +1058,40 @@ async function findMyReservation() {
                 slot &&
                 slot.status === "reserved" &&
                 (
-                    slot.bookedBy ===
-                    currentUser.uid
-                    ||
-                    slot.bookedEmail ===
-                    currentUser.email
+                    slot.bookedBy === currentUser.uid ||
+                    slot.bookedEmail === currentUser.email
                 )
-           ) {
+            ) {
+
                 currentReservation = {
                     slotId: slotId,
                     city: selectedCity,
                     ...slot
                 };
+
             }
+
         });
 
         if (currentReservation) {
+
             arrivalPanel.classList.remove("hidden");
+
+        } else {
+
+            arrivalPanel.classList.add("hidden");
+
         }
 
     } catch (error) {
-        console.error("Reservation check error:", error);
+
+        console.error(
+            "Reservation error:",
+            error
+        );
+
     }
+
 }
 
 
@@ -897,54 +1100,85 @@ async function findMyReservation() {
 // ======================================================
 
 if (arriveBtn) {
-    arriveBtn.addEventListener("click", async () => {
 
-        if (!currentUser) {
-            openLogin();
-            return;
+    arriveBtn.addEventListener(
+        "click",
+        async () => {
+
+            if (!currentUser) {
+
+                openLogin();
+
+                return;
+            }
+
+            if (!currentReservation) {
+
+                showToast(
+                    "No valid reservation found."
+                );
+
+                return;
+            }
+
+            try {
+
+                const {
+                    ref,
+                    update
+                } = await import(
+                    "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js"
+                );
+
+                const gateRef =
+                    ref(
+                        db,
+                        `cities/${selectedCity}/gate`
+                    );
+
+                await update(
+                    gateRef,
+                    {
+                        open: true,
+                        openedBy: currentUser.uid,
+                        openedEmail: currentUser.email,
+                        openedSlot: currentReservation.slotId,
+                        openedAt: Date.now()
+                    }
+                );
+
+                showToast("Gate opened.");
+
+                setTimeout(
+                    async () => {
+
+                        await update(
+                            gateRef,
+                            {
+                                open: false
+                            }
+                        );
+
+                    },
+                    8000
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Gate error:",
+                    error
+                );
+
+                showToast(
+                    "Unable to open gate."
+                );
+
+            }
+
         }
+    );
 
-        if (!currentReservation) {
-            showToast("No valid reservation found.");
-            return;
-        }
-
-        const gateRef = ref(
-            db,
-            `cities/${selectedCity}/gate`
-        );
-
-        try {
-
-            await update(gateRef, {
-                open: true,
-                openedBy: currentUser.uid,
-                openedEmail: currentUser.email,
-                openedSlot: currentReservation.slotId,
-                openedAt: Date.now()
-            });
-
-            showToast("Gate opened.");
-
-            setTimeout(async () => {
-
-                try {
-                    await update(gateRef, {
-                        open: false
-                    });
-                } catch (error) {
-                    console.error("Gate close error:", error);
-                }
-
-            }, 8000);
-
-        } catch (error) {
-
-            console.error("Gate error:", error);
-
-            showToast("Unable to open gate.");
-        }
-    });
 }
 
 
@@ -952,52 +1186,72 @@ if (arriveBtn) {
 // GATE LISTENER
 // ======================================================
 
-function listenToGate() {
+async function listenToGate() {
 
-    const gateRef = ref(
-        db,
-        `cities/${selectedCity}/gate`
-    );
+    if (!db) return;
 
-    onValue(
-        gateRef,
-        (snapshot) => {
+    try {
 
-            const gate = snapshot.val();
-            const isOpen = gate?.open === true;
+        const {
+            ref,
+            onValue
+        } = await import(
+            "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js"
+        );
 
-            if (isOpen) {
-
-                gatePanel.classList.add("gate-open");
-
-                gateIcon.textContent = "OPEN";
-
-                gateStatusText.textContent =
-                    "Gate Open";
-
-                gateStatusMessage.textContent =
-                    "Entry gate is currently open.";
-
-            } else {
-
-                gatePanel.classList.remove("gate-open");
-
-                gateIcon.textContent = "CLOSED";
-
-                gateStatusText.textContent =
-                    "Gate Closed";
-
-                gateStatusMessage.textContent =
-                    "Gate is closed.";
-            }
-        },
-        (error) => {
-            console.error(
-                "Gate listener error:",
-                error
+        const gateRef =
+            ref(
+                db,
+                `cities/${selectedCity}/gate`
             );
-        }
-    );
+
+        onValue(
+            gateRef,
+            (snapshot) => {
+
+                const gate = snapshot.val();
+
+                const isOpen =
+                    gate?.open === true;
+
+                if (isOpen) {
+
+                    gatePanel.classList.add("gate-open");
+
+                    gateIcon.textContent = "OPEN";
+
+                    gateStatusText.textContent =
+                        "Gate Open";
+
+                    gateStatusMessage.textContent =
+                        "Entry gate is currently open.";
+
+                } else {
+
+                    gatePanel.classList.remove("gate-open");
+
+                    gateIcon.textContent = "CLOSED";
+
+                    gateStatusText.textContent =
+                        "Gate Closed";
+
+                    gateStatusMessage.textContent =
+                        "Gate is closed.";
+
+                }
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Gate listener error:",
+            error
+        );
+
+    }
+
 }
 
 
@@ -1027,12 +1281,11 @@ window.addEventListener("click", (event) => {
 
 
 // ======================================================
-// INITIAL LOAD
+// START
 // ======================================================
 
 console.log(
-    "SmartPark JavaScript loaded successfully."
+    "SmartPark interface loaded successfully."
 );
 
-loadParkingData();
-listenToGate();
+startFirebase();
