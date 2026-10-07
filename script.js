@@ -1,7 +1,7 @@
 /* ============================================================
    SMARTPARK - SMART PARKING SYSTEM
    FIREBASE + AUTH + BOOKING + PAYMENT + ARRIVAL + GATE
-   ============================================================ */
+   =========================================================== */
 
 
 /* ============================================================
@@ -365,7 +365,7 @@ cityButtons.forEach(button => {
         cityButtons.forEach(btn => {
             btn.classList.remove("active");
         });
-
+o
         button.classList.add("active");
 
         selectedSlot =
