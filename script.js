@@ -1,11 +1,11 @@
 /* ============================================================
    SMARTPARK - SMART PARKING SYSTEM
-   FIREBASE + AUTH + BOOKING + PAYMENT + ARRIVAL + GATE
-   =========================================================== */
+   Firebase + Authentication + Booking + Payment + Arrival + Gate
+   ============================================================ */
 
 
 /* ============================================================
-   FIREBASE CONFIG
+   FIREBASE CONFIGURATION
    ============================================================ */
 
 const firebaseConfig = {
@@ -23,6 +23,15 @@ const firebaseConfig = {
 
 
 /* ============================================================
+   IMPORTANT:
+   THIS IS YOUR ACTUAL FIREBASE PATH
+   ============================================================ */
+
+const DATABASE_ROOT =
+    "availableSlots/availableSlots/smartParking";
+
+
+/* ============================================================
    GLOBAL VARIABLES
    ============================================================ */
 
@@ -36,82 +45,19 @@ let selectedCity = "surat";
 let selectedSlot = null;
 
 let firebaseReady = false;
-let gateListenerStarted = false;
 
-
-/* ============================================================
-   DATABASE ROOT
-   ============================================================ */
-
-const DATABASE_ROOT =
-    "SmartParking/Dashboard/availableSlots/smartParking";
+let parkingListenerUnsubscribe = null;
+let gateListenerUnsubscribe = null;
 
 
 /* ============================================================
    DOM ELEMENTS
    ============================================================ */
 
-/* Navbar */
+/* Login */
 const loginNavBtn =
     document.getElementById("loginNavBtn");
 
-
-/* City */
-const cityButtons =
-    document.querySelectorAll(".city-btn");
-
-const parkingStatus =
-    document.getElementById("parkingStatus");
-
-const selectedCityName =
-    document.getElementById("selectedCityName");
-
-
-/* Counts */
-const availableCount =
-    document.getElementById("availableCount");
-
-const reservedCount =
-    document.getElementById("reservedCount");
-
-const occupiedCount =
-    document.getElementById("occupiedCount");
-
-const totalCount =
-    document.getElementById("totalCount");
-
-
-/* Slots */
-const slotContainer =
-    document.getElementById("slotContainer");
-
-const fullMessage =
-    document.getElementById("fullMessage");
-
-
-/* Arrival */
-const arrivalPanel =
-    document.getElementById("arrivalPanel");
-
-const arriveBtn =
-    document.getElementById("arriveBtn");
-
-
-/* Gate */
-const gatePanel =
-    document.getElementById("gatePanel");
-
-const gateIcon =
-    document.getElementById("gateIcon");
-
-const gateStatusText =
-    document.getElementById("gateStatusText");
-
-const gateStatusMessage =
-    document.getElementById("gateStatusMessage");
-
-
-/* Login */
 const loginModal =
     document.getElementById("loginModal");
 
@@ -157,6 +103,39 @@ const showLogin =
     document.getElementById("showLogin");
 
 
+/* Cities */
+const cityButtons =
+    document.querySelectorAll(".city-btn");
+
+const selectedCityName =
+    document.getElementById("selectedCityName");
+
+const parkingStatus =
+    document.getElementById("parkingStatus");
+
+
+/* Parking counts */
+const availableCount =
+    document.getElementById("availableCount");
+
+const reservedCount =
+    document.getElementById("reservedCount");
+
+const occupiedCount =
+    document.getElementById("occupiedCount");
+
+const totalCount =
+    document.getElementById("totalCount");
+
+
+/* Slots */
+const slotContainer =
+    document.getElementById("slotContainer");
+
+const fullMessage =
+    document.getElementById("fullMessage");
+
+
 /* Booking */
 const bookingModal =
     document.getElementById("bookingModal");
@@ -188,6 +167,28 @@ const payNowBtn =
     document.getElementById("payNowBtn");
 
 
+/* Arrival */
+const arrivalPanel =
+    document.getElementById("arrivalPanel");
+
+const arriveBtn =
+    document.getElementById("arriveBtn");
+
+
+/* Gate */
+const gatePanel =
+    document.getElementById("gatePanel");
+
+const gateIcon =
+    document.getElementById("gateIcon");
+
+const gateStatusText =
+    document.getElementById("gateStatusText");
+
+const gateStatusMessage =
+    document.getElementById("gateStatusMessage");
+
+
 /* Toast */
 const toast =
     document.getElementById("toast");
@@ -215,7 +216,7 @@ function showToast(message) {
 
 
 /* ============================================================
-   MODALS
+   MODAL FUNCTIONS
    ============================================================ */
 
 function openModal(modal) {
@@ -231,53 +232,6 @@ function closeModal(modal) {
     if (modal) {
         modal.classList.add("hidden");
     }
-}
-
-
-/* ============================================================
-   PARKING STATUS
-   ============================================================ */
-
-function setParkingStatus(message, type = "loading") {
-
-    if (!parkingStatus) {
-        return;
-    }
-
-    parkingStatus.textContent = message;
-
-    parkingStatus.classList.remove(
-        "success",
-        "error",
-        "loading"
-    );
-
-    parkingStatus.classList.add(type);
-}
-
-
-/* ============================================================
-   DATE FORMAT
-   ============================================================ */
-
-function formatDateTime(date) {
-
-    const year =
-        date.getFullYear();
-
-    const month =
-        String(date.getMonth() + 1).padStart(2, "0");
-
-    const day =
-        String(date.getDate()).padStart(2, "0");
-
-    const hours =
-        String(date.getHours()).padStart(2, "0");
-
-    const minutes =
-        String(date.getMinutes()).padStart(2, "0");
-
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
 
@@ -300,7 +254,62 @@ function cityDisplayName(city) {
 
 
 /* ============================================================
-   AUTH ERROR MESSAGE
+   PARKING STATUS
+   ============================================================ */
+
+function setParkingStatus(
+    message,
+    type = "loading"
+) {
+
+    if (!parkingStatus) {
+        return;
+    }
+
+    parkingStatus.textContent = message;
+
+    parkingStatus.classList.remove(
+        "success",
+        "error",
+        "loading"
+    );
+
+    parkingStatus.classList.add(type);
+}
+
+
+/* ============================================================
+   LOCAL DATE/TIME
+   Firebase booking format:
+   2026-10-08T12:30:00
+   ============================================================ */
+
+function getLocalISOTime(date = new Date()) {
+
+    const year =
+        date.getFullYear();
+
+    const month =
+        String(date.getMonth() + 1).padStart(2, "0");
+
+    const day =
+        String(date.getDate()).padStart(2, "0");
+
+    const hours =
+        String(date.getHours()).padStart(2, "0");
+
+    const minutes =
+        String(date.getMinutes()).padStart(2, "0");
+
+    const seconds =
+        String(date.getSeconds()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
+
+
+/* ============================================================
+   AUTH ERROR
    ============================================================ */
 
 function getAuthErrorMessage(error) {
@@ -345,7 +354,7 @@ function getAuthErrorMessage(error) {
 
 cityButtons.forEach(button => {
 
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", () => {
 
         const city =
             String(
@@ -359,25 +368,22 @@ cityButtons.forEach(button => {
             return;
         }
 
-        selectedCity =
-            city;
+        selectedCity = city;
+        selectedSlot = null;
 
         cityButtons.forEach(btn => {
             btn.classList.remove("active");
         });
-o
+
         button.classList.add("active");
 
-        selectedSlot =
-            null;
-
-        await loadParkingData();
+        listenToParkingData();
     });
 });
 
 
 /* ============================================================
-   LOGIN BUTTON
+   LOGIN NAV BUTTON
    ============================================================ */
 
 if (loginNavBtn) {
@@ -415,9 +421,7 @@ if (loginNavBtn) {
 
             } else {
 
-                openModal(
-                    loginModal
-                );
+                openModal(loginModal);
             }
         }
     );
@@ -440,7 +444,7 @@ if (closeLoginModal) {
 
 
 /* ============================================================
-   SHOW SIGNUP
+   OPEN SIGNUP
    ============================================================ */
 
 if (showSignup) {
@@ -452,7 +456,6 @@ if (showSignup) {
             event.preventDefault();
 
             closeModal(loginModal);
-
             openModal(signupModal);
         }
     );
@@ -475,7 +478,7 @@ if (closeSignupModal) {
 
 
 /* ============================================================
-   SHOW LOGIN
+   OPEN LOGIN
    ============================================================ */
 
 if (showLogin) {
@@ -487,7 +490,6 @@ if (showLogin) {
             event.preventDefault();
 
             closeModal(signupModal);
-
             openModal(loginModal);
         }
     );
@@ -495,7 +497,7 @@ if (showLogin) {
 
 
 /* ============================================================
-   LOGIN FORM
+   LOGIN
    ============================================================ */
 
 if (loginForm) {
@@ -549,9 +551,7 @@ if (loginForm) {
                     password
                 );
 
-                closeModal(
-                    loginModal
-                );
+                closeModal(loginModal);
 
                 loginForm.reset();
 
@@ -577,7 +577,7 @@ if (loginForm) {
 
 
 /* ============================================================
-   SIGNUP FORM
+   SIGNUP
    ============================================================ */
 
 if (signupForm) {
@@ -631,9 +631,7 @@ if (signupForm) {
                     password
                 );
 
-                closeModal(
-                    signupModal
-                );
+                closeModal(signupModal);
 
                 signupForm.reset();
 
@@ -659,118 +657,6 @@ if (signupForm) {
 
 
 /* ============================================================
-   UPDATE USER PANEL
-   ============================================================ */
-
-async function updateUserPanel() {
-
-    if (!currentUser) {
-
-        hideArrivalPanel();
-
-        return;
-    }
-
-    if (!firebaseReady || !db) {
-        return;
-    }
-
-    try {
-
-        const {
-            ref,
-            get
-        } =
-            window.firebaseDatabaseModule;
-
-        const usersRef =
-            ref(
-                db,
-                `${DATABASE_ROOT}/users`
-            );
-
-        const snapshot =
-            await get(usersRef);
-
-        if (!snapshot.exists()) {
-
-            hideArrivalPanel();
-
-            return;
-        }
-
-        const users =
-            snapshot.val();
-
-        let userData =
-            null;
-
-        for (
-            const [id, user]
-            of Object.entries(users)
-        ) {
-
-            if (
-                user &&
-                user.email === currentUser.email
-            ) {
-
-                userData =
-                    user;
-
-                break;
-            }
-        }
-
-        if (
-            userData &&
-            userData.currentBooking
-        ) {
-
-            showArrivalPanel();
-
-        } else {
-
-            hideArrivalPanel();
-        }
-
-    } catch (error) {
-
-        console.error(
-            "User panel error:",
-            error
-        );
-
-        hideArrivalPanel();
-    }
-}
-
-
-/* ============================================================
-   ARRIVAL PANEL
-   ============================================================ */
-
-function showArrivalPanel() {
-
-    if (arrivalPanel) {
-        arrivalPanel.classList.remove(
-            "hidden"
-        );
-    }
-}
-
-
-function hideArrivalPanel() {
-
-    if (arrivalPanel) {
-        arrivalPanel.classList.add(
-            "hidden"
-        );
-    }
-}
-
-
-/* ============================================================
    FIREBASE INITIALIZATION
    ============================================================ */
 
@@ -784,17 +670,23 @@ async function startFirebase() {
         );
 
 
+        /* Firebase App */
+
         const firebaseAppModule =
             await import(
                 "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
             );
 
 
+        /* Firebase Authentication */
+
         const firebaseAuthModule =
             await import(
                 "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
             );
 
+
+        /* Firebase Realtime Database */
 
         const firebaseDatabaseModule =
             await import(
@@ -809,9 +701,7 @@ async function startFirebase() {
 
 
         auth =
-            firebaseAuthModule.getAuth(
-                app
-            );
+            firebaseAuthModule.getAuth(app);
 
 
         db =
@@ -827,22 +717,22 @@ async function startFirebase() {
             firebaseDatabaseModule;
 
 
-        firebaseReady =
-            true;
+        firebaseReady = true;
 
+
+        /* ====================================================
+           AUTH STATE
+           ==================================================== */
 
         firebaseAuthModule.onAuthStateChanged(
             auth,
             async user => {
 
-                currentUser =
-                    user;
-
+                currentUser = user;
 
                 if (user) {
 
                     if (loginNavBtn) {
-
                         loginNavBtn.textContent =
                             "Logout";
                     }
@@ -852,32 +742,26 @@ async function startFirebase() {
                 } else {
 
                     if (loginNavBtn) {
-
                         loginNavBtn.textContent =
                             "Login";
                     }
 
                     hideArrivalPanel();
                 }
-
-
-                await loadParkingData();
-
-                listenToGate();
             }
         );
+
+
+        /* Start live listeners */
+
+        listenToParkingData();
+        listenToGate();
 
 
         setParkingStatus(
             "Firebase connected",
             "success"
         );
-
-
-        await loadParkingData();
-
-        listenToGate();
-
 
     } catch (error) {
 
@@ -886,15 +770,12 @@ async function startFirebase() {
             error
         );
 
-        firebaseReady =
-            false;
-
+        firebaseReady = false;
 
         setParkingStatus(
             "Firebase connection failed",
             "error"
         );
-
 
         showToast(
             "Firebase connection failed. Check Console."
@@ -904,93 +785,108 @@ async function startFirebase() {
 
 
 /* ============================================================
-   LOAD PARKING DATA
+   LIVE PARKING LISTENER
+   ============================================================
+
+   VERY IMPORTANT:
+
+   The website DOES NOT control local vehicle entry.
+
+   ESP32:
+   Ultrasonic → detects local car
+            → checks Firebase
+            → opens physical gate
+            → changes Firebase
+
+   Website:
+   Firebase → listens
+           → displays new status
+
    ============================================================ */
 
-async function loadParkingData() {
+function listenToParkingData() {
 
-    if (
-        !firebaseReady ||
-        !db
-    ) {
+    if (!firebaseReady || !db) {
         return;
     }
 
 
-    try {
-
-        const {
-            ref,
-            get
-        } =
-            window.firebaseDatabaseModule;
+    const {
+        ref,
+        onValue
+    } =
+        window.firebaseDatabaseModule;
 
 
-        const cityRef =
-            ref(
-                db,
-                `${DATABASE_ROOT}/cities/${selectedCity}`
-            );
+    /* Remove previous city listener */
 
+    if (parkingListenerUnsubscribe) {
 
-        const snapshot =
-            await get(cityRef);
+        parkingListenerUnsubscribe();
 
-
-        if (!snapshot.exists()) {
-
-            renderEmptyParking();
-
-            setParkingStatus(
-                `${cityDisplayName(selectedCity)} data not found`,
-                "error"
-            );
-
-            return;
-        }
-
-
-        const cityData =
-            snapshot.val();
-
-
-        renderParkingData(
-            cityData
-        );
-
-
-        setParkingStatus(
-            `${cityDisplayName(selectedCity)} parking is live`,
-            "success"
-        );
-
-
-    }    catch (error) {
-
-        console.error(
-            "Parking loading error:",
-            error
-        );
-
-        setParkingStatus(
-            "Unable to load parking data",
-            "error"
-        );
-
-        if (slotContainer) {
-
-            slotContainer.innerHTML = `
-                <div class="loading-box">
-                    Unable to load parking slots.
-                </div>
-            `;
-        }
+        parkingListenerUnsubscribe = null;
     }
+
+
+    const cityRef =
+        ref(
+            db,
+            `${DATABASE_ROOT}/cities/${selectedCity}`
+        );
+
+
+    parkingListenerUnsubscribe =
+        onValue(
+            cityRef,
+
+            snapshot => {
+
+                if (!snapshot.exists()) {
+
+                    renderEmptyParking();
+
+                    setParkingStatus(
+                        `${cityDisplayName(selectedCity)} data not found`,
+                        "error"
+                    );
+
+                    return;
+                }
+
+
+                const cityData =
+                    snapshot.val();
+
+
+                renderParkingData(
+                    cityData
+                );
+
+
+                setParkingStatus(
+                    `${cityDisplayName(selectedCity)} parking is live`,
+                    "success"
+                );
+            },
+
+            error => {
+
+                console.error(
+                    "Parking listener error:",
+                    error
+                );
+
+                setParkingStatus(
+                    "Unable to listen to parking data",
+                    "error"
+                );
+            }
+        );
 }
 
 
 /* ============================================================
-   RENDER PARKING DATA
+   RENDER PARKING
    ============================================================ */
 
 function renderParkingData(cityData) {
@@ -1003,6 +899,7 @@ function renderParkingData(cityData) {
 
     const slotList =
         Object.entries(slots);
+
 
     const available =
         Number(
@@ -1054,6 +951,16 @@ function renderParkingData(cityData) {
     }
 
 
+    if (fullMessage) {
+
+        if (available === 0) {
+            fullMessage.classList.remove("hidden");
+        } else {
+            fullMessage.classList.add("hidden");
+        }
+    }
+
+
     if (!slotContainer) {
         return;
     }
@@ -1079,28 +986,9 @@ function renderParkingData(cityData) {
                     slotData || {}
                 );
 
-            slotContainer.appendChild(
-                card
-            );
+            slotContainer.appendChild(card);
         }
     );
-
-
-    if (fullMessage) {
-
-        if (available === 0) {
-
-            fullMessage.classList.remove(
-                "hidden"
-            );
-
-        } else {
-
-            fullMessage.classList.add(
-                "hidden"
-            );
-        }
-    }
 }
 
 
@@ -1148,15 +1036,12 @@ function createSlotCard(
     let statusText =
         "Available";
 
-
     if (status === "reserved") {
-        statusText =
-            "Reserved";
+        statusText = "Reserved";
     }
 
     if (status === "occupied") {
-        statusText =
-            "Occupied";
+        statusText = "Occupied";
     }
 
 
@@ -1172,7 +1057,6 @@ function createSlotCard(
 
     slotName.className =
         "slot-name";
-
 
     slotName.textContent =
         slotId.replace(
@@ -1191,29 +1075,22 @@ function createSlotCard(
         statusText;
 
 
-    top.appendChild(
-        slotName
-    );
+    top.appendChild(slotName);
+    top.appendChild(badge);
 
-    top.appendChild(
-        badge
-    );
+    card.appendChild(top);
 
 
-    card.appendChild(
-        top
-    );
-
-
-    /* Available slot */
+    /* ========================================================
+       AVAILABLE SLOT
+       ======================================================== */
 
     if (status === "available") {
 
         const button =
             document.createElement("button");
 
-        button.type =
-            "button";
+        button.type = "button";
 
         button.className =
             "slot-action reserve-btn";
@@ -1226,16 +1103,12 @@ function createSlotCard(
             "click",
             () => {
 
-                reserveSlot(
-                    slotId
-                );
+                reserveSlot(slotId);
             }
         );
 
 
-        card.appendChild(
-            button
-        );
+        card.appendChild(button);
 
     } else {
 
@@ -1252,9 +1125,7 @@ function createSlotCard(
                 : "Currently Occupied";
 
 
-        card.appendChild(
-            unavailable
-        );
+        card.appendChild(unavailable);
     }
 
 
@@ -1284,9 +1155,7 @@ function reserveSlot(slotId) {
             "Please login before reserving a slot."
         );
 
-        openModal(
-            loginModal
-        );
+        openModal(loginModal);
 
         return;
     }
@@ -1299,9 +1168,7 @@ function reserveSlot(slotId) {
     if (bookingCity) {
 
         bookingCity.textContent =
-            cityDisplayName(
-                selectedCity
-            );
+            cityDisplayName(selectedCity);
     }
 
 
@@ -1322,9 +1189,7 @@ function reserveSlot(slotId) {
     }
 
 
-    openModal(
-        bookingModal
-    );
+    openModal(bookingModal);
 }
 
 
@@ -1340,13 +1205,8 @@ if (confirmBookingBtn) {
 
             if (!currentUser) {
 
-                closeModal(
-                    bookingModal
-                );
-
-                openModal(
-                    loginModal
-                );
+                closeModal(bookingModal);
+                openModal(loginModal);
 
                 return;
             }
@@ -1362,14 +1222,9 @@ if (confirmBookingBtn) {
             }
 
 
-            closeModal(
-                bookingModal
-            );
+            closeModal(bookingModal);
 
-
-            openModal(
-                paymentModal
-            );
+            openModal(paymentModal);
         }
     );
 }
@@ -1385,12 +1240,9 @@ if (closeBookingModal) {
         "click",
         () => {
 
-            selectedSlot =
-                null;
+            selectedSlot = null;
 
-            closeModal(
-                bookingModal
-            );
+            closeModal(bookingModal);
         }
     );
 }
@@ -1406,12 +1258,9 @@ if (closePaymentModal) {
         "click",
         () => {
 
-            selectedSlot =
-                null;
+            selectedSlot = null;
 
-            closeModal(
-                paymentModal
-            );
+            closeModal(paymentModal);
         }
     );
 }
@@ -1442,17 +1291,9 @@ if (payNowBtn) {
 
             if (!currentUser) {
 
-                showToast(
-                    "Please login first."
-                );
+                closeModal(paymentModal);
 
-                closeModal(
-                    paymentModal
-                );
-
-                openModal(
-                    loginModal
-                );
+                openModal(loginModal);
 
                 return;
             }
@@ -1468,8 +1309,7 @@ if (payNowBtn) {
             }
 
 
-            payNowBtn.disabled =
-                true;
+            payNowBtn.disabled = true;
 
             payNowBtn.textContent =
                 "Processing...";
@@ -1486,7 +1326,7 @@ if (payNowBtn) {
 
 
                 /* =================================================
-                   1. CHECK SELECTED SLOT
+                   CHECK SELECTED SLOT
                    ================================================= */
 
                 const slotRef =
@@ -1497,9 +1337,7 @@ if (payNowBtn) {
 
 
                 const slotSnapshot =
-                    await get(
-                        slotRef
-                    );
+                    await get(slotRef);
 
 
                 if (!slotSnapshot.exists()) {
@@ -1528,29 +1366,8 @@ if (payNowBtn) {
 
 
                 /* =================================================
-                   2. READ BOOKINGS
+                   READ BOOKINGS, PAYMENTS, USERS
                    ================================================= */
-
-                const bookingsRef =
-                    ref(
-                        db,
-                        `${DATABASE_ROOT}/bookings`
-                    );
-
-
-                const paymentsRef =
-                    ref(
-                        db,
-                        `${DATABASE_ROOT}/payments`
-                    );
-
-
-                const usersRef =
-                    ref(
-                        db,
-                        `${DATABASE_ROOT}/users`
-                    );
-
 
                 const [
                     bookingsSnapshot,
@@ -1558,9 +1375,27 @@ if (payNowBtn) {
                     usersSnapshot
                 ] =
                     await Promise.all([
-                        get(bookingsRef),
-                        get(paymentsRef),
-                        get(usersRef)
+
+                        get(
+                            ref(
+                                db,
+                                `${DATABASE_ROOT}/bookings`
+                            )
+                        ),
+
+                        get(
+                            ref(
+                                db,
+                                `${DATABASE_ROOT}/payments`
+                            )
+                        ),
+
+                        get(
+                            ref(
+                                db,
+                                `${DATABASE_ROOT}/users`
+                            )
+                        )
                     ]);
 
 
@@ -1569,12 +1404,10 @@ if (payNowBtn) {
                         ? bookingsSnapshot.val()
                         : {};
 
-
                 const payments =
                     paymentsSnapshot.exists()
                         ? paymentsSnapshot.val()
                         : {};
-
 
                 const users =
                     usersSnapshot.exists()
@@ -1583,7 +1416,7 @@ if (payNowBtn) {
 
 
                 /* =================================================
-                   3. BOOKING ID
+                   FIND NEXT BOOKING ID
                    ================================================= */
 
                 const bookingNumbers =
@@ -1594,22 +1427,21 @@ if (payNowBtn) {
                         )
                         .map(
                             id =>
-                                parseInt(
+                                Number(
                                     id.replace(
                                         "BOOK",
                                         ""
-                                    ),
-                                    10
+                                    )
                                 )
                         )
                         .filter(
-                            number =>
-                                !isNaN(number)
+                            n =>
+                                !isNaN(n)
                         );
 
 
                 const nextBookingNumber =
-                    bookingNumbers.length > 0
+                    bookingNumbers.length
                         ? Math.max(
                             ...bookingNumbers
                         ) + 1
@@ -1623,7 +1455,7 @@ if (payNowBtn) {
 
 
                 /* =================================================
-                   4. PAYMENT ID
+                   FIND NEXT PAYMENT ID
                    ================================================= */
 
                 const paymentNumbers =
@@ -1634,22 +1466,21 @@ if (payNowBtn) {
                         )
                         .map(
                             id =>
-                                parseInt(
+                                Number(
                                     id.replace(
                                         "PAY",
                                         ""
-                                    ),
-                                    10
+                                    )
                                 )
                         )
                         .filter(
-                            number =>
-                                !isNaN(number)
+                            n =>
+                                !isNaN(n)
                         );
 
 
                 const nextPaymentNumber =
-                    paymentNumbers.length > 0
+                    paymentNumbers.length
                         ? Math.max(
                             ...paymentNumbers
                         ) + 1
@@ -1663,11 +1494,10 @@ if (payNowBtn) {
 
 
                 /* =================================================
-                   5. FIND USER
+                   FIND OR CREATE USER
                    ================================================= */
 
-                let userId =
-                    null;
+                let userId = null;
 
 
                 for (
@@ -1681,25 +1511,12 @@ if (payNowBtn) {
                         currentUser.email
                     ) {
 
-                        userId =
-                            id;
+                        userId = id;
 
                         break;
                     }
                 }
 
-
-                /* =================================================
-                   6. UPDATE OBJECT
-                   ================================================= */
-
-                const updates =
-                    {};
-
-
-                /* =================================================
-                   7. CREATE USER
-                   ================================================= */
 
                 if (!userId) {
 
@@ -1711,22 +1528,21 @@ if (payNowBtn) {
                             )
                             .map(
                                 id =>
-                                    parseInt(
+                                    Number(
                                         id.replace(
                                             "USER",
                                             ""
-                                        ),
-                                        10
+                                        )
                                     )
                             )
                             .filter(
-                                number =>
-                                    !isNaN(number)
+                                n =>
+                                    !isNaN(n)
                             );
 
 
                     const nextUserNumber =
-                        userNumbers.length > 0
+                        userNumbers.length
                             ? Math.max(
                                 ...userNumbers
                             ) + 1
@@ -1737,77 +1553,103 @@ if (payNowBtn) {
                         `USER${String(
                             nextUserNumber
                         ).padStart(3, "0")}`;
-
-
-                    updates[
-                        `${DATABASE_ROOT}/users/${userId}`
-                    ] = {
-
-                        city:
-                            selectedCity,
-
-                        currentBooking:
-                            bookingId,
-
-                        email:
-                            currentUser.email,
-
-                        name:
-                            currentUser.displayName ||
-                            currentUser.email.split("@")[0],
-
-                        phone:
-                            ""
-                    };
-
-
-                } else {
-
-                    updates[
-                        `${DATABASE_ROOT}/users/${userId}`
-                    ] = {
-
-                        ...users[userId],
-
-                        city:
-                            selectedCity,
-
-                        currentBooking:
-                            bookingId
-                    };
                 }
 
 
                 /* =================================================
-                   8. TIME
+                   TIME
                    ================================================= */
 
                 const now =
                     new Date();
 
 
-                const bookingTime =
-                    formatDateTime(
-                        now
-                    );
-
-
-                const expiryDate =
+                const expiry =
                     new Date(
                         now.getTime() +
                         15 * 60 * 1000
                     );
 
 
+                const bookingTime =
+                    getLocalISOTime(now);
+
+
                 const expiryTime =
-                    formatDateTime(
-                        expiryDate
-                    );
+                    getLocalISOTime(expiry);
 
 
                 /* =================================================
-                   9. BOOKING
+                   PARKING COUNTS
                    ================================================= */
+
+                const parkingSnapshot =
+                    await get(
+                        ref(
+                            db,
+                            `${DATABASE_ROOT}/cities/${selectedCity}/parking`
+                        )
+                    );
+
+
+                const parking =
+                    parkingSnapshot.exists()
+                        ? parkingSnapshot.val()
+                        : {};
+
+
+                const available =
+                    Number(
+                        parking.available ?? 0
+                    );
+
+                const reserved =
+                    Number(
+                        parking.reserved ?? 0
+                    );
+
+
+                if (available <= 0) {
+
+                    throw new Error(
+                        "No available parking slots."
+                    );
+                }
+
+
+                /* =================================================
+                   MULTI-PATH FIREBASE UPDATE
+                   ================================================= */
+
+                const updates = {};
+
+
+                /* User */
+
+                updates[
+                    `${DATABASE_ROOT}/users/${userId}`
+                ] = {
+
+                    name:
+                        users[userId]?.name ||
+                        currentUser.displayName ||
+                        currentUser.email.split("@")[0],
+
+                    email:
+                        currentUser.email,
+
+                    currentBooking:
+                        bookingId,
+
+                    city:
+                        selectedCity,
+
+                    userType:
+                        "reserved"
+                };
+
+
+                /* Booking */
 
                 updates[
                     `${DATABASE_ROOT}/bookings/${bookingId}`
@@ -1817,7 +1659,7 @@ if (payNowBtn) {
                         100,
 
                     bookingStatus:
-                        "Reserved",
+                        "confirmed",
 
                     bookingTime:
                         bookingTime,
@@ -1829,10 +1671,10 @@ if (payNowBtn) {
                         expiryTime,
 
                     paymentStatus:
-                        "Paid",
+                        "paid",
 
                     refundStatus:
-                        "Not Refunded",
+                        "not_required",
 
                     slot:
                         selectedSlot,
@@ -1842,9 +1684,7 @@ if (payNowBtn) {
                 };
 
 
-                /* =================================================
-                   10. PAYMENT
-                   ================================================= */
+                /* Payment */
 
                 updates[
                     `${DATABASE_ROOT}/payments/${paymentId}`
@@ -1856,17 +1696,18 @@ if (payNowBtn) {
                     bookingId:
                         bookingId,
 
-                    method:
-                        "Demo Payment",
+                    paymentStatus:
+                        "paid",
 
-                    status:
-                        "Paid"
+                    userId:
+                        userId,
+
+                    paymentTime:
+                        bookingTime
                 };
 
 
-                /* =================================================
-                   11. SLOT = RESERVED
-                   ================================================= */
+                /* Slot */
 
                 updates[
                     `${DATABASE_ROOT}/cities/${selectedCity}/slots/${selectedSlot}/status`
@@ -1874,62 +1715,42 @@ if (payNowBtn) {
                     "reserved";
 
 
-                /* =================================================
-                   12. PARKING COUNTS
-                   ================================================= */
+                updates[
+                    `${DATABASE_ROOT}/cities/${selectedCity}/slots/${selectedSlot}/bookedBy`
+                ] =
+                    userId;
 
-                const parkingRef =
-                    ref(
-                        db,
-                        `${DATABASE_ROOT}/cities/${selectedCity}/parking`
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${selectedCity}/slots/${selectedSlot}/bookingTime`
+                ] =
+                    bookingTime;
+
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${selectedCity}/slots/${selectedSlot}/expiryTime`
+                ] =
+                    expiryTime;
+
+
+                /* Parking */
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${selectedCity}/parking/available`
+                ] =
+                    Math.max(
+                        0,
+                        available - 1
                     );
 
 
-                const parkingSnapshot =
-                    await get(
-                        parkingRef
-                    );
+                updates[
+                    `${DATABASE_ROOT}/cities/${selectedCity}/parking/reserved`
+                ] =
+                    reserved + 1;
 
 
-                if (
-                    parkingSnapshot.exists()
-                ) {
-
-                    const parking =
-                        parkingSnapshot.val();
-
-
-                    const currentAvailable =
-                        Number(
-                            parking.available ?? 0
-                        );
-
-
-                    const currentReserved =
-                        Number(
-                            parking.reserved ?? 0
-                        );
-
-
-                    updates[
-                        `${DATABASE_ROOT}/cities/${selectedCity}/parking/available`
-                    ] =
-                        Math.max(
-                            0,
-                            currentAvailable - 1
-                        );
-
-
-                    updates[
-                        `${DATABASE_ROOT}/cities/${selectedCity}/parking/reserved`
-                    ] =
-                        currentReserved + 1;
-                }
-
-
-                /* =================================================
-                   13. SAVE
-                   ================================================= */
+                /* Save everything */
 
                 await update(
                     ref(db),
@@ -1937,34 +1758,18 @@ if (payNowBtn) {
                 );
 
 
-                /* =================================================
-                   14. SUCCESS
-                   ================================================= */
-
-                closeModal(
-                    paymentModal
-                );
+                selectedSlot = null;
 
 
-                selectedSlot =
-                    null;
+                closeModal(paymentModal);
 
 
                 showToast(
-                    `Booking confirmed! ${bookingId}`
+                    `Booking confirmed: ${bookingId}`
                 );
 
 
-                await loadParkingData();
-
                 await updateUserPanel();
-
-
-                payNowBtn.disabled =
-                    false;
-
-                payNowBtn.textContent =
-                    "Pay Now";
 
 
             } catch (error) {
@@ -1974,12 +1779,12 @@ if (payNowBtn) {
                     error
                 );
 
-
                 showToast(
                     error.message ||
-                    "Booking failed. Please try again."
+                    "Booking failed."
                 );
 
+            } finally {
 
                 payNowBtn.disabled =
                     false;
@@ -1993,7 +1798,129 @@ if (payNowBtn) {
 
 
 /* ============================================================
-   ARRIVAL BUTTON
+   UPDATE USER PANEL
+   ============================================================ */
+
+async function updateUserPanel() {
+
+    if (!currentUser) {
+
+        hideArrivalPanel();
+
+        return;
+    }
+
+
+    if (!firebaseReady || !db) {
+        return;
+    }
+
+
+    try {
+
+        const {
+            ref,
+            get
+        } =
+            window.firebaseDatabaseModule;
+
+
+        const snapshot =
+            await get(
+                ref(
+                    db,
+                    `${DATABASE_ROOT}/users`
+                )
+            );
+
+
+        if (!snapshot.exists()) {
+
+            hideArrivalPanel();
+
+            return;
+        }
+
+
+        const users =
+            snapshot.val();
+
+
+        let userData = null;
+
+
+        for (
+            const user
+            of Object.values(users)
+        ) {
+
+            if (
+                user &&
+                user.email ===
+                currentUser.email
+            ) {
+
+                userData = user;
+
+                break;
+            }
+        }
+
+
+        if (
+            userData &&
+            userData.currentBooking
+        ) {
+
+            showArrivalPanel();
+
+        } else {
+
+            hideArrivalPanel();
+        }
+
+    } catch (error) {
+
+        console.error(
+            "User panel error:",
+            error
+        );
+
+        hideArrivalPanel();
+    }
+}
+
+
+/* ============================================================
+   ARRIVAL PANEL
+   ============================================================ */
+
+function showArrivalPanel() {
+
+    if (arrivalPanel) {
+        arrivalPanel.classList.remove("hidden");
+    }
+}
+
+
+function hideArrivalPanel() {
+
+    if (arrivalPanel) {
+        arrivalPanel.classList.add("hidden");
+    }
+}
+
+
+/* ============================================================
+   RESERVED USER ARRIVAL
+   ============================================================
+
+   IMPORTANT:
+
+   This is ONLY for a user who already reserved a slot.
+
+   A local vehicle NEVER uses this function.
+
    ============================================================ */
 
 if (arriveBtn) {
@@ -2026,22 +1953,18 @@ if (arriveBtn) {
                     window.firebaseDatabaseModule;
 
 
-                const usersRef =
-                    ref(
-                        db,
-                        `${DATABASE_ROOT}/users`
-                    );
-
+                /* Find current user */
 
                 const usersSnapshot =
                     await get(
-                        usersRef
+                        ref(
+                            db,
+                            `${DATABASE_ROOT}/users`
+                        )
                     );
 
 
-                if (
-                    !usersSnapshot.exists()
-                ) {
+                if (!usersSnapshot.exists()) {
 
                     showToast(
                         "User record not found."
@@ -2055,13 +1978,13 @@ if (arriveBtn) {
                     usersSnapshot.val();
 
 
-                let userData =
-                    null;
+                let userId = null;
+                let userData = null;
 
 
                 for (
-                    const user
-                    of Object.values(users)
+                    const [id, user]
+                    of Object.entries(users)
                 ) {
 
                     if (
@@ -2070,8 +1993,8 @@ if (arriveBtn) {
                         currentUser.email
                     ) {
 
-                        userData =
-                            user;
+                        userId = id;
+                        userData = user;
 
                         break;
                     }
@@ -2095,22 +2018,18 @@ if (arriveBtn) {
                     userData.currentBooking;
 
 
-                const bookingRef =
-                    ref(
-                        db,
-                        `${DATABASE_ROOT}/bookings/${bookingId}`
-                    );
-
+                /* Get booking */
 
                 const bookingSnapshot =
                     await get(
-                        bookingRef
+                        ref(
+                            db,
+                            `${DATABASE_ROOT}/bookings/${bookingId}`
+                        )
                     );
 
 
-                if (
-                    !bookingSnapshot.exists()
-                ) {
+                if (!bookingSnapshot.exists()) {
 
                     showToast(
                         "Booking not found."
@@ -2124,11 +2043,15 @@ if (arriveBtn) {
                     bookingSnapshot.val();
 
 
-                if (
+                const bookingStatus =
                     String(
                         booking.bookingStatus || ""
-                    ).toLowerCase() !==
-                    "reserved"
+                    ).toLowerCase();
+
+
+                if (
+                    bookingStatus !== "reserved" &&
+                    bookingStatus !== "confirmed"
                 ) {
 
                     showToast(
@@ -2139,9 +2062,116 @@ if (arriveBtn) {
                 }
 
 
-                const updates =
-                    {};
+                /* Check expiry */
 
+                if (
+                    booking.expiryTime &&
+                    new Date(
+                        booking.expiryTime
+                    ).getTime() < Date.now()
+                ) {
+
+                    showToast(
+                        "This booking has expired."
+                    );
+
+                    return;
+                }
+
+
+                const city =
+                    booking.city;
+
+                const slot =
+                    booking.slot;
+
+
+                if (!city || !slot) {
+
+                    showToast(
+                        "Booking city or slot is missing."
+                    );
+
+                    return;
+                }
+
+
+                /* Get slot */
+
+                const slotSnapshot =
+                    await get(
+                        ref(
+                            db,
+                            `${DATABASE_ROOT}/cities/${city}/slots/${slot}`
+                        )
+                    );
+
+
+                if (!slotSnapshot.exists()) {
+
+                    showToast(
+                        "Reserved slot not found."
+                    );
+
+                    return;
+                }
+
+
+                const slotData =
+                    slotSnapshot.val();
+
+
+                if (
+                    String(
+                        slotData.status || ""
+                    ).toLowerCase() !==
+                    "reserved"
+                ) {
+
+                    showToast(
+                        "This slot is not reserved."
+                    );
+
+                    return;
+                }
+
+
+                /* Get parking */
+
+                const parkingSnapshot =
+                    await get(
+                        ref(
+                            db,
+                            `${DATABASE_ROOT}/cities/${city}/parking`
+                        )
+                    );
+
+
+                const parking =
+                    parkingSnapshot.exists()
+                        ? parkingSnapshot.val()
+                        : {};
+
+
+                const reserved =
+                    Number(
+                        parking.reserved ?? 0
+                    );
+
+                const occupied =
+                    Number(
+                        parking.occupied ?? 0
+                    );
+
+
+                /* =================================================
+                   RESERVED ARRIVAL UPDATES
+                   ================================================= */
+
+                const updates = {};
+
+
+                /* Booking */
 
                 updates[
                     `${DATABASE_ROOT}/bookings/${bookingId}/bookingStatus`
@@ -2156,7 +2186,58 @@ if (arriveBtn) {
 
 
                 updates[
+                    `${DATABASE_ROOT}/bookings/${bookingId}/entryType`
+                ] =
+                    "reserved";
+
+
+                /* Slot */
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${city}/slots/${slot}/status`
+                ] =
+                    "occupied";
+
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${city}/slots/${slot}/bookedBy`
+                ] =
+                    userId;
+
+
+                /* Parking */
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${city}/parking/reserved`
+                ] =
+                    Math.max(
+                        0,
+                        reserved - 1
+                    );
+
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${city}/parking/occupied`
+                ] =
+                    occupied + 1;
+
+
+                /* Global gate */
+
+                updates[
                     `${DATABASE_ROOT}/gate/open`
+                ] =
+                    true;
+
+
+                updates[
+                    `${DATABASE_ROOT}/gate/parkingFull`
+                ] =
+                    false;
+
+
+                updates[
+                    `${DATABASE_ROOT}/gate/entryAllowed`
                 ] =
                     true;
 
@@ -2164,8 +2245,48 @@ if (arriveBtn) {
                 updates[
                     `${DATABASE_ROOT}/gate/status`
                 ] =
-                    "open";
+                    "OPEN";
 
+
+                updates[
+                    `${DATABASE_ROOT}/gate/entryType`
+                ] =
+                    "reserved";
+
+
+                /* City gate */
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${city}/gate/open`
+                ] =
+                    true;
+
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${city}/gate/parkingFull`
+                ] =
+                    false;
+
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${city}/gate/entryAllowed`
+                ] =
+                    true;
+
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${city}/gate/status`
+                ] =
+                    "OPEN";
+
+
+                updates[
+                    `${DATABASE_ROOT}/cities/${city}/gate/entryType`
+                ] =
+                    "reserved";
+
+
+                /* Save */
 
                 await update(
                     ref(db),
@@ -2173,10 +2294,12 @@ if (arriveBtn) {
                 );
 
 
+                hideArrivalPanel();
+
+
                 showToast(
                     "Arrival confirmed. Entry gate opened."
                 );
-
 
             } catch (error) {
 
@@ -2185,8 +2308,8 @@ if (arriveBtn) {
                     error
                 );
 
-
                 showToast(
+                    error.message ||
                     "Unable to confirm arrival."
                 );
             }
@@ -2197,21 +2320,34 @@ if (arriveBtn) {
 
 /* ============================================================
    GATE LISTENER
+   ============================================================
+
+   IMPORTANT:
+
+   WEBSITE ONLY READS THE GATE STATE.
+
+   For a LOCAL vehicle:
+
+   Ultrasonic
+        ↓
+      ESP32
+        ↓
+   Firebase gate
+        ↓
+     Website
+
+   The website does NOT open the local gate.
+
    ============================================================ */
 
 function listenToGate() {
 
     if (
         !firebaseReady ||
-        !db ||
-        gateListenerStarted
+        !db
     ) {
         return;
     }
-
-
-    gateListenerStarted =
-        true;
 
 
     const {
@@ -2221,6 +2357,14 @@ function listenToGate() {
         window.firebaseDatabaseModule;
 
 
+    if (gateListenerUnsubscribe) {
+
+        gateListenerUnsubscribe();
+
+        gateListenerUnsubscribe = null;
+    }
+
+
     const gateRef =
         ref(
             db,
@@ -2228,29 +2372,40 @@ function listenToGate() {
         );
 
 
-    onValue(
-        gateRef,
-        snapshot => {
+    gateListenerUnsubscribe =
+        onValue(
+            gateRef,
 
-            const gateData =
-                snapshot.exists()
-                    ? snapshot.val()
-                    : {};
+            snapshot => {
 
-
-            const isOpen =
-                gateData.open === true ||
-                String(
-                    gateData.status || ""
-                ).toLowerCase() ===
-                "open";
+                const gateData =
+                    snapshot.exists()
+                        ? snapshot.val()
+                        : {};
 
 
-            updateGateUI(
-                isOpen
-            );
-        }
-    );
+                const isOpen =
+                    gateData.open === true ||
+                    String(
+                        gateData.status || ""
+                    ).toLowerCase() ===
+                    "open";
+
+
+                updateGateUI(
+                    isOpen,
+                    gateData.entryType || ""
+                );
+            },
+
+            error => {
+
+                console.error(
+                    "Gate listener error:",
+                    error
+                );
+            }
+        );
 }
 
 
@@ -2258,7 +2413,10 @@ function listenToGate() {
    GATE UI
    ============================================================ */
 
-function updateGateUI(isOpen) {
+function updateGateUI(
+    isOpen,
+    entryType = ""
+) {
 
     if (gatePanel) {
 
@@ -2288,10 +2446,27 @@ function updateGateUI(isOpen) {
 
     if (gateStatusMessage) {
 
-        gateStatusMessage.textContent =
-            isOpen
-                ? "Entry gate is open."
-                : "Entry gate is closed. Confirm arrival to open it.";
+        if (
+            isOpen &&
+            entryType === "local"
+        ) {
+
+            gateStatusMessage.textContent =
+                "Gate opened automatically for a local vehicle.";
+
+        } else if (
+            isOpen &&
+            entryType === "reserved"
+        ) {
+
+            gateStatusMessage.textContent =
+                "Gate opened for a reserved vehicle.";
+
+        } else {
+
+            gateStatusMessage.textContent =
+                "Entry gate is closed.";
+        }
     }
 }
 
@@ -2300,25 +2475,23 @@ function updateGateUI(isOpen) {
    INITIAL CITY
    ============================================================ */
 
-cityButtons.forEach(
-    button => {
+cityButtons.forEach(button => {
 
-        const city =
-            String(
-                button.dataset.city || ""
-            ).toLowerCase();
+    const city =
+        String(
+            button.dataset.city || ""
+        ).toLowerCase();
 
 
-        if (
-            city === selectedCity
-        ) {
+    if (
+        city === selectedCity
+    ) {
 
-            button.classList.add(
-                "active"
-            );
-        }
+        button.classList.add(
+            "active"
+        );
     }
-);
+});
 
 
 /* ============================================================
@@ -2330,6 +2503,5 @@ document.addEventListener(
     () => {
 
         startFirebase();
-
     }
 );
