@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#071521">
+  <meta name="description" content="SMARTPARK — live parking availability, reservations, and smart gate entry for Surat and Navsari.">
+  <title>SMARTPARK | Smart Parking, Made Simple</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="script.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="brand" href="#home" aria-label="SMARTPARK home">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>SMART<span class="brand-accent">PARK</span><small>SMART CITY PARKING</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#parking">Find parking</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <span id="authStatus" class="auth-status">Not signed in</span>
+        <button id="loginBtn" class="button button-quiet" type="button">Log in</button>
+        <button id="signupBtn" class="button button-primary" type="button">Create account</button>
+        <button id="logoutBtn" class="button button-quiet hidden" type="button">Log out</button>
+      </div>
+      <button id="mobileMenuBtn" class="mobile-menu-button" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    </header>
+
+    <main>
+      <section id="home" class="hero section-wrap">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="status-dot"></span> SMART PARKING · SURAT + NAVSARI</div>
+          <h1>Your city.<br><span>Your space.</span><br>Your time back.</h1>
+          <p>Find a free slot, reserve it before you arrive, and enjoy a smoother parking experience with live slot updates.</p>
+          <div class="hero-actions">
+            <a class="button button-primary button-large" href="#parking">Explore parking <span aria-hidden="true">↗</span></a>
+            <a class="button button-outline button-large" href="#how-it-works">How it works</a>
+          </div>
+          <div class="hero-proof">
+            <span class="proof-icon" aria-hidden="true">⌁</span>
+            <span><strong>Live parking status</strong><small>Connected to the SmartPark database</small></span>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Illustration of a smart parking system">
+          <div class="visual-orbit orbit-one"></div>
+          <div class="visual-orbit orbit-two"></div>
+          <div class="visual-label label-top"><span class="status-dot"></span> LIVE SYSTEM</div>
+          <div class="parking-illustration">
+            <div class="parking-sign">P</div>
+            <div class="road-line"></div>
+            <div class="car car-one"><span class="car-window"></span><span class="car-wheel wheel-left"></span><span class="car-wheel wheel-right"></span></div>
+            <div class="car car-two"><span class="car-window"></span><span class="car-wheel wheel-left"></span><span class="car-wheel wheel-right"></span></div>
+            <div class="slot-mark slot-mark-one"><span>01</span></div>
+            <div class="slot-mark slot-mark-two"><span>02</span></div>
+            <div class="scan-ring"></div>
+          </div>
+          <div class="visual-label label-bottom"><span class="signal-bars">▂ ▅ ▇</span> SMART ACCESS</div>
+          <div class="floating-chip chip-top"><span class="chip-icon">⌖</span><span><strong>2 cities</strong><small>One simple system</small></span></div>
+          <div class="floating-chip chip-bottom"><span class="chip-icon">✓</span><span><strong>Quick booking</strong><small>Less time searching</small></span></div>
+        </div>
+      </section>
+
+      <section class="metrics-strip section-wrap" aria-label="Parking overview">
+        <div class="metric-intro"><span class="eyebrow">PARKING OVERVIEW</span><strong>Small steps.<br>Smarter cities.</strong></div>
+        <div class="metric"><span class="metric-icon">⌖</span><span class="metric-value" id="cityCount">2</span><span class="metric-label">Connected cities</span></div>
+        <div class="metric"><span class="metric-icon">▤</span><span class="metric-value" id="totalSlotsAll">4</span><span class="metric-label">Total parking slots</span></div>
+        <div class="metric"><span class="metric-icon">◉</span><span class="metric-value" id="availableAll">—</span><span class="metric-label">Slots available now</span></div>
+        <div class="metric-live"><span class="status-dot"></span><span><strong id="connectionStatus">Connecting</strong><small>Realtime status</small></span></div>
+      </section>
+
+      <section id="parking" class="parking-section section-wrap">
+        <div class="section-heading">
+          <div><span class="eyebrow">CHOOSE YOUR DESTINATION</span><h2>Parking, without the guesswork.</h2><p>Choose a city to view its parking slots and current availability.</p></div>
+          <div class="live-pill"><span class="status-dot"></span> Live updates</div>
+        </div>
+
+        <div class="city-tabs" role="group" aria-label="Choose city">
+          <button class="city-tab active" id="citySuratBtn" type="button" data-city="surat" aria-pressed="true"><span class="city-tab-icon">S</span><span><strong>Surat</strong><small>Gujarat, India</small></span><span class="tab-arrow">↗</span></button>
+          <button class="city-tab" id="cityNavsariBtn" type="button" data-city="navsari" aria-pressed="false"><span class="city-tab-icon">N</span><span><strong>Navsari</strong><small>Gujarat, India</small></span><span class="tab-arrow">↗</span></button>
+        </div>
+
+        <div class="city-summary">
+          <div><span class="eyebrow">CURRENT LOCATION</span><h3 id="selectedCityName">Surat</h3><p id="cityLiveMessage" aria-live="polite">Waiting for live parking data…</p></div>
+          <div class="city-stats">
+            <div><span id="cityAvailable">—</span><small>Available</small></div>
+            <div><span id="cityReserved">—</span><small>Reserved</small></div>
+            <div><span id="cityOccupied">—</span><small>Occupied</small></div>
+            <div><span id="cityTotal">2</span><small>Total slots</small></div>
+          </div>
+        </div>
+
+        <div id="parkingSlots" class="slot-grid" aria-live="polite">
+          <article class="slot-card slot-loading"><div class="slot-card-top"><span class="slot-number">SLOT 01</span><span class="slot-status">Loading</span></div><div class="slot-symbol">P</div><h3>Loading slot data</h3><p>Connecting to the live parking database…</p></article>
+          <article class="slot-card slot-loading"><div class="slot-card-top"><span class="slot-number">SLOT 02</span><span class="slot-status">Loading</span></div><div class="slot-symbol">P</div><h3>Loading slot data</h3><p>Connecting to the live parking database…</p></article>
+        </div>
+
+        <div class="parking-note"><span class="note-icon">i</span><p>Availability is based on the latest data received from the system. Please wait for a live connection before relying on a slot's status.</p></div>
+      </section>
+
+      <section class="entry-section section-wrap">
+        <div class="section-heading"><div><span class="eyebrow">TWO WAYS TO ENTER</span><h2>Your arrival, your way.</h2><p>Local drivers can check for space at the gate. Reserved users can request entry for a valid booking.</p></div></div>
+        <div class="entry-cards">
+          <article class="entry-card local-entry">
+            <div class="entry-card-icon">⌁</div><span class="entry-kicker">NO BOOKING NEEDED</span><h3>Local entry</h3><p>Arriving without a reservation? The ultrasonic sensor detects a vehicle near the gate. The gate should open only when the selected city has an available slot.</p>
+            <div class="entry-detail"><span class="status-dot"></span><span>Vehicle detection threshold: <strong>10 cm</strong></span></div>
+          </article>
+          <article class="entry-card reserved-entry">
+            <div class="entry-card-icon">▣</div><span class="entry-kicker">FOR RESERVED USERS</span><h3>Reserved entry</h3><p>Sign in, book a slot, complete the demo payment, and use your active reservation to request gate entry.</p>
+            <button id="myBookingsBtn" class="button button-outline" type="button">View my bookings <span aria-hidden="true">↗</span></button>
+          </article>
+        </div>
+      </section>
+
+      <section id="how-it-works" class="how-section section-wrap">
+        <div class="section-heading"><div><span class="eyebrow">SIMPLE BY DESIGN</span><h2>From search to parked.</h2><p>A clearer parking experience in a few easy steps.</p></div></div>
+        <div class="steps-grid">
+          <article class="step-card"><span class="step-number">01</span><div class="step-icon">⌖</div><h3>Choose a city</h3><p>Select Surat or Navsari and check the latest slot availability.</p></article>
+          <article class="step-card"><span class="step-number">02</span><div class="step-icon">▤</div><h3>Reserve a slot</h3><p>Sign in and choose an available slot for your visit.</p></article>
+          <article class="step-card"><span class="step-number">03</span><div class="step-icon">₹</div><h3>Demo payment</h3><p>Complete the project demo payment flow. No real money is charged.</p></article>
+          <article class="step-card"><span class="step-number">04</span><div class="step-icon">↗</div><h3>Request entry</h3><p>Use your valid booking to request reserved entry at the gate.</p></article>
+        </div>
+      </section>
+
+      <section id="about" class="about-section section-wrap">
+        <div class="about-panel"><div class="about-art"><div class="about-grid"></div><div class="about-p">P</div><span class="about-orbit"></span><span class="about-caption">CONNECTED PARKING</span></div><div class="about-copy"><span class="eyebrow">ABOUT SMARTPARK</span><h2>Less circling.<br><span>More living.</span></h2><p>SMARTPARK is a smart parking project designed to connect a simple website, a live database, and an ESP32-based gate prototype. It brings slot monitoring and reservation workflows together for Surat and Navsari.</p><div class="about-tags"><span>ESP32 + Sensors</span><span>Firebase Realtime Database</span><span>Mobile-friendly website</span></div></div></div>
+      </section>
+
+      <section id="contact" class="contact-section section-wrap">
+        <div><span class="eyebrow">NEED A HAND?</span><h2>Let's make parking simpler.</h2><p>Questions about using the demo? Get in touch with the project team.</p></div>
+        <a class="button button-primary button-large" href="mailto:smartpark.support@example.com">Contact the team <span aria-hidden="true">↗</span></a>
+      </section>
+    </main>
+
+    <footer class="site-footer"><a class="brand footer-brand" href="#home"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span><span>SMART<span class="brand-accent">PARK</span><small>SMART CITY PARKING</small></span></a><p>Smarter parking starts with a better connection.</p><span>© <span id="currentYear">2026</span> SMARTPARK · College project demo</span></footer>
+  </div>
+
+  <div id="toastRegion" class="toast-region" role="status" aria-live="polite"></div>
+
+  <!-- Login / create-account dialog -->
+  <dialog id="authModal" class="app-modal">
+    <form id="authForm" class="modal-content">
+      <button class="modal-close" type="button" data-close-modal="authModal" aria-label="Close">×</button>
+      <span class="eyebrow">WELCOME TO SMARTPARK</span><h2 id="authModalTitle">Welcome back.</h2><p id="authModalDescription">Log in to manage your parking reservations.</p>
+      <div id="authNameField" class="form-field hidden"><label for="authName">Full name</label><input id="authName" name="name" type="text" autocomplete="name" placeholder="Your full name"></div>
+      <div class="form-field"><label for="authEmail">Email address</label><input id="authEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+      <div class="form-field"><label for="authPassword">Password</label><input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters" required></div>
+      <p id="authError" class="form-message" aria-live="polite"></p>
+      <button id="authSubmitBtn" class="button button-primary button-full" type="submit">Log in</button>
+      <p class="modal-switch"><span id="authSwitchText">New to SmartPark?</span> <button id="authSwitchBtn" type="button">Create account</button></p>
+    </form>
+  </dialog>
+
+  <!-- Booking dialog -->
+  <dialog id="bookingModal" class="app-modal">
+    <form id="bookingForm" class="modal-content">
+      <button class="modal-close" type="button" data-close-modal="bookingModal" aria-label="Close">×</button>
+      <span class="eyebrow">RESERVE YOUR SPACE</span><h2>Make it yours.</h2><p>Review your slot and reservation time.</p>
+      <div class="booking-summary"><span>Selected location</span><strong id="bookingCityLabel">Surat</strong><span>Selected parking slot</span><strong id="bookingSlotLabel">Slot 1</strong></div>
+      <input id="bookingCity" type="hidden" name="city" value="surat"><input id="bookingSlot" type="hidden" name="slotId" value="slot1">
+      <div class="form-field"><label for="bookingStart">Reservation start</label><input id="bookingStart" name="bookingStart" type="datetime-local" required></div>
+      <div class="form-field"><label for="bookingEnd">Reservation end</label><input id="bookingEnd" name="bookingEnd" type="datetime-local" required></div>
+      <div class="demo-payment-note"><span>₹</span><div><strong>Demo payment only</strong><small>No real money will be charged.</small></div></div>
+      <p id="bookingError" class="form-message" aria-live="polite"></p>
+      <button id="bookingContinueBtn" class="button button-primary button-full" type="submit">Continue to demo payment</button>
+    </form>
+  </dialog>
+
+  <!-- Demo payment dialog -->
+  <dialog id="paymentModal" class="app-modal">
+    <form id="paymentForm" class="modal-content">
+      <button class="modal-close" type="button" data-close-modal="paymentModal" aria-label="Close">×</button>
+      <span class="eyebrow">PROJECT DEMO CHECKOUT</span><h2>Demo payment.</h2><p>This is a simulation for your college project. No payment provider is contacted and no real money is taken.</p>
+      <div class="payment-total"><span>Demo amount</span><strong id="paymentAmount">₹50.00</strong></div>
+      <div class="form-field"><label for="paymentMethod">Demo payment method</label><select id="paymentMethod" name="paymentMethod" required><option value="demo_upi">Demo UPI</option><option value="demo_card">Demo card</option><option value="demo_cashless">Demo wallet</option></select></div>
+      <label class="demo-confirm"><input id="demoPaymentConfirm" type="checkbox" required><span>I understand this is a simulated payment, not a real transaction.</span></label>
+      <p id="paymentError" class="form-message" aria-live="polite"></p>
+      <button id="completeDemoPaymentBtn" class="button button-primary button-full" type="submit">Complete demo payment</button>
+    </form>
+  </dialog>
+
+  <!-- My bookings dialog -->
+  <dialog id="bookingsModal" class="app-modal app-modal-wide">
+    <div class="modal-content">
+      <button class="modal-close" type="button" data-close-modal="bookingsModal" aria-label="Close">×</button>
+      <span class="eyebrow">YOUR SMARTPARK ACCOUNT</span><h2>My bookings.</h2><p>View your reservations, payment status and reserved-entry options.</p>
+      <div id="myBookingsList" class="my-bookings-list"><p class="empty-state">Sign in to view your bookings.</p></div>
+      <p id="bookingsMessage" class="form-message" aria-live="polite"></p>
+    </div>
+  </dialog>
+</body>
+</html>
