@@ -13,17 +13,18 @@
     content="SmartPark - Smart parking reservations and live parking availability in Surat and Navsari."
   >
 
+  <!-- Correct existing CSS filename -->
   <link rel="stylesheet" href="style.css">
 
-  <!-- Firebase SDK -->
-  <script type="module" src="script.js"></script>
+  <!-- Correct existing JavaScript filename -->
+  <script type="module" src="./final%20script%20.js"></script>
 </head>
 
 <body>
 
-  <!-- ================= HEADER ================= -->
+  <!-- HEADER -->
   <header class="site-header">
-    <a href="#" class="brand" id="homeLink">
+    <a href="#homeSection" class="brand" id="homeLink">
       <span class="brand-icon">P</span>
       <span>Smart<span class="brand-highlight">Park</span></span>
     </a>
@@ -55,12 +56,13 @@
 
   <main>
 
-    <!-- ================= HERO ================= -->
+    <!-- HERO -->
     <section class="hero" id="homeSection">
       <div class="hero-content">
         <span class="eyebrow">SMART PARKING • SIMPLIFIED</span>
 
-        <h1>Find your parking.<br>
+        <h1>
+          Find your parking.<br>
           <span class="text-highlight">Save your time.</span>
         </h1>
 
@@ -113,7 +115,7 @@
       </div>
     </section>
 
-    <!-- ================= AUTHENTICATION ================= -->
+    <!-- LOGIN AND SIGNUP -->
     <section id="authSection" class="auth-section hidden">
       <div class="auth-card">
 
@@ -207,8 +209,9 @@
       </div>
     </section>
 
-    <!-- ================= DASHBOARD ================= -->
+    <!-- PARKING DASHBOARD -->
     <section id="dashboard" class="dashboard-section">
+
       <div class="section-heading">
         <span class="eyebrow">YOUR PARKING SPACE</span>
         <h2>Parking Dashboard</h2>
@@ -227,7 +230,9 @@
         </button>
       </div>
 
+      <!-- CITY SELECTOR -->
       <div class="city-selector">
+
         <button
           class="city-btn active"
           id="suratBtn"
@@ -255,9 +260,12 @@
             <small>2 parking slots</small>
           </span>
         </button>
+
       </div>
 
+      <!-- PARKING SLOTS -->
       <section id="parkingSection" class="parking-section">
+
         <div class="parking-heading">
           <div>
             <span class="eyebrow">LIVE PARKING</span>
@@ -295,36 +303,46 @@
         </div>
 
         <div id="slotsContainer" class="slots-grid">
-
-          <!-- Slot cards are created by script.js from Firebase data. -->
-
           <div class="slot-placeholder">
             <span class="loader"></span>
             <p>Loading parking slots...</p>
           </div>
-
         </div>
 
         <div class="slot-legend">
-          <span><i class="legend-dot available-dot"></i> Available</span>
-          <span><i class="legend-dot reserved-dot"></i> Reserved</span>
-          <span><i class="legend-dot occupied-dot"></i> Occupied</span>
+          <span>
+            <i class="legend-dot available-dot"></i>
+            Available
+          </span>
+
+          <span>
+            <i class="legend-dot reserved-dot"></i>
+            Reserved
+          </span>
+
+          <span>
+            <i class="legend-dot occupied-dot"></i>
+            Occupied
+          </span>
         </div>
 
         <p id="parkingUpdatedAt" class="small-note">
           Waiting for live parking data...
         </p>
+
       </section>
 
-      <!-- ================= MY BOOKINGS ================= -->
+      <!-- MY BOOKINGS -->
       <section id="myBookingsSection" class="subsection">
+
         <div class="subsection-heading">
           <div>
             <span class="eyebrow">RESERVATIONS</span>
             <h3>My Bookings</h3>
           </div>
 
-          <button id="refreshBookingsBtn" class="btn btn-outline" type="button">
+          <button id="refreshBookingsBtn" class="btn btn-outline"
+                  type="button">
             Refresh
           </button>
         </div>
@@ -334,10 +352,12 @@
             <p>Login to view your bookings.</p>
           </div>
         </div>
+
       </section>
 
-      <!-- ================= DEMO PAYMENTS ================= -->
+      <!-- MY PAYMENTS -->
       <section id="myPaymentsSection" class="subsection">
+
         <div class="subsection-heading">
           <div>
             <span class="eyebrow">PAYMENT HISTORY</span>
@@ -350,12 +370,14 @@
             <p>Login to view your payment history.</p>
           </div>
         </div>
+
       </section>
 
     </section>
 
-    <!-- ================= GATE STATUS ================= -->
+    <!-- GATE STATUS -->
     <section id="gateSection" class="gate-section">
+
       <div class="section-heading">
         <span class="eyebrow">SMART ENTRY</span>
         <h2>Automatic Gate Status</h2>
@@ -380,10 +402,12 @@
           UNKNOWN
         </span>
       </div>
+
     </section>
 
-    <!-- ================= ADMIN ================= -->
+    <!-- ADMIN DASHBOARD -->
     <section id="adminSection" class="admin-section hidden">
+
       <div class="section-heading">
         <span class="eyebrow">ADMINISTRATION</span>
         <h2>Admin Dashboard</h2>
@@ -393,6 +417,7 @@
       <div id="adminMessage" class="message hidden" role="status"></div>
 
       <div class="admin-summary">
+
         <article class="summary-card">
           <span>Registered Users</span>
           <strong id="adminUserCount">0</strong>
@@ -407,6 +432,7 @@
           <span>Payment Records</span>
           <strong id="adminPaymentCount">0</strong>
         </article>
+
       </div>
 
       <div class="subsection">
@@ -422,16 +448,19 @@
           <p>Admin data will appear after authorization.</p>
         </div>
       </div>
+
     </section>
 
-    <!-- ================= PROFILE ================= -->
+    <!-- MY PROFILE -->
     <section id="profileSection" class="profile-section hidden">
+
       <div class="section-heading">
         <span class="eyebrow">ACCOUNT SETTINGS</span>
         <h2>My Account</h2>
       </div>
 
       <div class="profile-card">
+
         <div class="form-group">
           <label for="profileName">Full Name</label>
           <input id="profileName" type="text" autocomplete="name">
@@ -456,21 +485,25 @@
         </button>
 
         <div id="profileMessage" class="message hidden" role="status"></div>
+
       </div>
+
     </section>
 
-    <!-- ================= ABOUT ================= -->
+    <!-- ABOUT -->
     <section id="aboutSection" class="information-section">
+
       <div class="section-heading">
         <span class="eyebrow">ABOUT SMARTPARK</span>
         <h2>Parking made simpler</h2>
         <p>
-          SmartPark combines a live parking dashboard, online reservations,
+          SmartPark combines live parking information, online reservations,
           demo payments, and an ESP32-based automatic gate prototype.
         </p>
       </div>
 
       <div class="information-grid">
+
         <article class="information-card">
           <h3>Live Availability</h3>
           <p>View parking information for Surat and Navsari.</p>
@@ -478,18 +511,21 @@
 
         <article class="information-card">
           <h3>Easy Reservations</h3>
-          <p>Reserve a free parking slot using your account.</p>
+          <p>Reserve an available parking slot using your account.</p>
         </article>
 
         <article class="information-card">
           <h3>Smart Gate</h3>
           <p>Vehicle detection uses a 10 cm ultrasonic threshold.</p>
         </article>
+
       </div>
+
     </section>
 
-    <!-- ================= CONTACT ================= -->
+    <!-- CONTACT -->
     <section id="contactSection" class="information-section">
+
       <div class="section-heading">
         <span class="eyebrow">CONTACT</span>
         <h2>Get in touch</h2>
@@ -498,26 +534,25 @@
           and automatic gate control.
         </p>
       </div>
+
     </section>
 
   </main>
 
-  <!-- ================= BOOKING MODAL ================= -->
+  <!-- BOOKING MODAL -->
   <div id="bookingModal" class="modal hidden" aria-hidden="true">
+
     <div class="modal-backdrop" data-close-modal="bookingModal"></div>
 
-    <section
-      class="modal-card"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="bookingTitle"
-    >
-      <button
-        class="close-btn"
-        type="button"
-        data-close-modal="bookingModal"
-        aria-label="Close booking"
-      >×</button>
+    <section class="modal-card"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="bookingTitle">
+
+      <button class="close-btn"
+              type="button"
+              data-close-modal="bookingModal"
+              aria-label="Close booking">×</button>
 
       <span class="eyebrow">PARKING RESERVATION</span>
       <h2 id="bookingTitle">Reserve Your Slot</h2>
@@ -526,6 +561,7 @@
       <p id="bookingSlotLabel">Slot: Slot 1</p>
 
       <div class="booking-details">
+
         <div class="form-group">
           <label for="bookingStart">Booking Start</label>
           <input id="bookingStart" type="datetime-local" required>
@@ -538,8 +574,10 @@
 
         <div class="form-group">
           <label for="bookingAmount">Demo Booking Amount (₹)</label>
-          <input id="bookingAmount" type="number" value="100" min="1" disabled>
+          <input id="bookingAmount" type="number"
+                 value="100" min="1" disabled>
         </div>
+
       </div>
 
       <p class="small-note">
@@ -548,72 +586,84 @@
 
       <div id="bookingMessage" class="message hidden" role="status"></div>
 
-      <button id="continuePaymentBtn" class="btn btn-primary btn-full"
+      <button id="continuePaymentBtn"
+              class="btn btn-primary btn-full"
               type="button">
         Continue to Demo Payment
       </button>
 
-      <button class="btn btn-outline btn-full" type="button"
+      <button class="btn btn-outline btn-full"
+              type="button"
               data-close-modal="bookingModal">
         Cancel
       </button>
+
     </section>
   </div>
 
-  <!-- ================= PAYMENT MODAL ================= -->
+  <!-- DEMO PAYMENT MODAL -->
   <div id="paymentModal" class="modal hidden" aria-hidden="true">
+
     <div class="modal-backdrop" data-close-modal="paymentModal"></div>
 
-    <section
-      class="modal-card"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="paymentTitle"
-    >
-      <button
-        class="close-btn"
-        type="button"
-        data-close-modal="paymentModal"
-        aria-label="Close payment"
-      >×</button>
+    <section class="modal-card"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="paymentTitle">
+
+      <button class="close-btn"
+              type="button"
+              data-close-modal="paymentModal"
+              aria-label="Close payment">×</button>
 
       <span class="eyebrow">DEMO CHECKOUT</span>
       <h2 id="paymentTitle">Confirm Demo Payment</h2>
 
-      <p id="paymentSummary">Your reservation details will appear here.</p>
+      <p id="paymentSummary">
+        Your reservation details will appear here.
+      </p>
 
       <div class="payment-notice">
         <strong>College project demonstration</strong>
-        <p>No card details are needed. No real payment will be processed.</p>
+        <p>
+          No card details are needed. No real payment will be processed.
+        </p>
       </div>
 
       <div id="paymentMessage" class="message hidden" role="status"></div>
 
       <button id="confirmDemoPaymentBtn"
-              class="btn btn-primary btn-full" type="button">
+              class="btn btn-primary btn-full"
+              type="button">
         Confirm Demo Payment
       </button>
 
-      <button class="btn btn-outline btn-full" type="button"
+      <button class="btn btn-outline btn-full"
+              type="button"
               data-close-modal="paymentModal">
         Cancel
       </button>
+
     </section>
   </div>
 
-  <!-- ================= NOTIFICATIONS ================= -->
-  <div id="toastContainer" class="toast-container"
-       aria-live="polite" aria-atomic="true"></div>
+  <!-- NOTIFICATIONS -->
+  <div id="toastContainer"
+       class="toast-container"
+       aria-live="polite"
+       aria-atomic="true"></div>
 
-  <!-- ================= FOOTER ================= -->
+  <!-- FOOTER -->
   <footer class="site-footer">
-    <a href="#" class="brand">
+
+    <a href="#homeSection" class="brand">
       <span class="brand-icon">P</span>
       <span>Smart<span class="brand-highlight">Park</span></span>
     </a>
 
     <p>Smart parking for a smarter tomorrow.</p>
     <p>© <span id="currentYear">2026</span> SmartPark. College project.</p>
+
   </footer>
 
 </body>
