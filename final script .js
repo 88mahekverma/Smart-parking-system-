@@ -42,14 +42,18 @@ const firebaseConfig = {
 };
 
 /*
-  IMPORTANT:
-  Your screenshot shows:
-  availableSlots
-      └── smartParking
-          └── cities
-              ├── surat
-              └── navsari
+  FIREBASE ROOT:
+  availableSlots/smartParking
+
+  Cities:
+  availableSlots/smartParking/cities/surat
+  availableSlots/smartParking/cities/navsari
+
+  Reserved-entry requests:
+  availableSlots/smartParking/gateRequests/surat
+  availableSlots/smartParking/gateRequests/navsari
 */
+
 const ROOT = "availableSlots/smartParking";
 
 const CITIES = ["surat", "navsari"];
@@ -69,6 +73,7 @@ let userProfile = {};
 let selectedCity = "surat";
 let authMode = "login";
 let pendingBooking = null;
+let authListenerVersion = 0;
 
 const cityData = {};
 const cityUnsubscribers = {};
@@ -112,7 +117,6 @@ function message(id, value, isError = false) {
 
 function clearMessage(id) {
   const element = $(id);
-
   if (!element) return;
 
   element.textContent = "";
@@ -132,13 +136,11 @@ function toast(value, isError = false) {
   }
 
   const item = document.createElement("div");
-
   item.className = isError ? "toast toast-error" : "toast";
   item.setAttribute("role", "status");
   item.textContent = value;
 
   container.appendChild(item);
-
   window.setTimeout(() => item.remove(), 4200);
 }
 
@@ -174,6 +176,10 @@ function money(value) {
   }).format(Number(value) || 0);
 }
 
+function validCitySlot(city, slotId) {
+  return CITIES.includes(city) && SLOT_IDS.includes(slotId);
+}
+
 function statusOf(slot) {
   if (!slot) return "available";
 
@@ -184,9 +190,7 @@ function statusOf(slot) {
     return "occupied";
   }
 
-  const status = String(
-    slot.status || "available"
-  ).toLowerCase();
+  const status = String(slot.status || "available").toLowerCase();
 
   return ["available", "reserved", "occupied"].includes(status)
     ? status
@@ -251,8 +255,7 @@ function startCityListeners() {
 
             message(
               "parkingError",
-              `No data at /${ROOT}/cities/${city}. ` +
-                "Check the database path in Firebase.",
+              `No data at /${ROOT}/cities/${city}. Check Firebase Data and Rules.`,
               true
             );
 
@@ -286,10 +289,7 @@ function startCityListeners() {
       },
 
       error => {
-        console.error(
-          `Firebase listener (${city}) failed:`,
-          error
-        );
+        console.error(`Firebase listener (${city}) failed:`, error);
 
         setText("connectionStatus", "Firebase read failed");
 
@@ -370,8 +370,11 @@ function renderCity(data) {
       const slot = slots[id] || {};
       const status = statusOf(slot);
       const label = status[0].toUpperCase() + status.slice(1);
+
       const enabled =
-        Boolean(currentUser) && status === "available";
+        Boolean(currentUser) &&
+        status === "available" &&
+        userProfile.userType !== "admin";
 
       const detail =
         status === "available"
@@ -398,9 +401,11 @@ function renderCity(data) {
             ${
               !currentUser
                 ? "Login to book"
-                : enabled
-                  ? "Reserve slot"
-                  : label
+                : userProfile.userType === "admin"
+                  ? "Admin account"
+                  : enabled
+                    ? "Reserve slot"
+                    : label
             }
           </button>
         </article>
@@ -431,10 +436,7 @@ function renderCity(data) {
 
   $("gateStatusBadge")?.classList.toggle("is-open", isOpen);
   $("gateStatusBadge")?.classList.toggle("is-closed", !isOpen);
-  $("gateStatusBadge")?.classList.toggle(
-    "live",
-    Boolean(data?.gate)
-  );
+  $("gateStatusBadge")?.classList.toggle("live", Boolean(data?.gate));
 }
 
 function renderHero() {
@@ -476,10 +478,7 @@ function setAuthMode(mode) {
       : "Login to your SmartPark account."
   );
 
-  setText(
-    "authSubmitBtn",
-    signup ? "Create Account" : "Login"
-  );
+  setText("authSubmitBtn", signup ? "Create Account" : "Login");
 
   setText(
     "authSwitchText",
@@ -488,10 +487,7 @@ function setAuthMode(mode) {
       : "Don't have an account?"
   );
 
-  setText(
-    "authSwitchBtn",
-    signup ? "Login" : "Create Account"
-  );
+  setText("authSwitchBtn", signup ? "Login" : "Create Account");
 
   $("nameField")?.classList.toggle("hidden", !signup);
   $("fullName")?.toggleAttribute("required", signup);
@@ -521,50 +517,33 @@ function readableAuthError(error) {
   const errors = {
     "auth/email-already-in-use":
       "This email already has an account. Please log in.",
-
     "auth/invalid-email":
       "Enter a valid email address.",
-
     "auth/weak-password":
       "Password must contain at least 6 characters.",
-
     "auth/invalid-credential":
       "Email or password is incorrect.",
-
     "auth/user-not-found":
       "No account was found for this email.",
-
     "auth/wrong-password":
       "Email or password is incorrect.",
-
     "auth/network-request-failed":
       "Network error. Check your connection.",
-
     "auth/too-many-requests":
-      "Too many attempts. Wait a little and try again."
+      "Too many attempts. Wait a little and try again.",
+    "auth/operation-not-allowed":
+      "Email/password sign-in is disabled in Firebase Authentication."
   };
 
-  return errors[error?.code] ||
-    error?.message ||
-    "Authentication failed.";
+  return errors[error?.code] || error?.message || "Authentication failed.";
 }
 
 function bindAuth() {
-  $("loginNavBtn")?.addEventListener("click", () => {
-    openAuth("login");
-  });
+  $("loginNavBtn")?.addEventListener("click", () => openAuth("login"));
+  $("signupNavBtn")?.addEventListener("click", () => openAuth("signup"));
+  $("heroSignupBtn")?.addEventListener("click", () => openAuth("signup"));
 
-  $("signupNavBtn")?.addEventListener("click", () => {
-    openAuth("signup");
-  });
-
-  $("heroSignupBtn")?.addEventListener("click", () => {
-    openAuth("signup");
-  });
-
-  $("closeAuthBtn")?.addEventListener("click", () => {
-    hide("authSection");
-  });
+  $("closeAuthBtn")?.addEventListener("click", () => hide("authSection"));
 
   $("authSwitchBtn")?.addEventListener("click", () => {
     setAuthMode(authMode === "login" ? "signup" : "login");
@@ -574,19 +553,11 @@ function bindAuth() {
     const field = $("password");
     if (!field) return;
 
-    field.type =
-      field.type === "password" ? "text" : "password";
+    field.type = field.type === "password" ? "text" : "password";
 
     setText(
       "togglePasswordBtn",
       field.type === "password" ? "Show" : "Hide"
-    );
-
-    $("togglePasswordBtn")?.setAttribute(
-      "aria-label",
-      field.type === "password"
-        ? "Show password"
-        : "Hide password"
     );
   });
 
@@ -594,20 +565,12 @@ function bindAuth() {
     const email = $("email")?.value.trim();
 
     if (!email) {
-      return message(
-        "authError",
-        "Enter your email address first.",
-        true
-      );
+      return message("authError", "Enter your email address first.", true);
     }
 
     try {
       await sendPasswordResetEmail(auth, email);
-
-      message(
-        "authSuccess",
-        "Password reset email sent. Check your inbox."
-      );
+      message("authSuccess", "Password reset email sent. Check your inbox.");
     } catch (error) {
       message("authError", readableAuthError(error), true);
     }
@@ -625,62 +588,69 @@ function bindAuth() {
   $("authForm")?.addEventListener("submit", async event => {
     event.preventDefault();
 
-    const email = $("email").value.trim();
-    const password = $("password").value;
-    const name = $("fullName").value.trim();
+    const email = $("email")?.value.trim();
+    const password = $("password")?.value;
+    const name = $("fullName")?.value.trim();
     const button = $("authSubmitBtn");
 
-    button.disabled = true;
+    if (!email || !password) {
+      return message("authError", "Enter your email and password.", true);
+    }
 
+    if (authMode === "signup" && !name) {
+      return message("authError", "Enter your full name.", true);
+    }
+
+    button.disabled = true;
     clearMessage("authError");
     clearMessage("authSuccess");
 
     try {
       if (authMode === "signup") {
-        if (!name) {
-          throw new Error("Enter your full name.");
-        }
-
-        const result =
-          await createUserWithEmailAndPassword(
-            auth,
-            email,
-            password
-          );
-
-        await updateProfile(result.user, {
-          displayName: name
-        });
-
-        await set(dbRef(`users/${result.user.uid}`), {
-          uid: result.user.uid,
-          name,
-          email,
-          userType: "local",
-          createdAt: new Date().toISOString()
-        });
-
-        toast("Account created successfully.");
-      } else {
-        await signInWithEmailAndPassword(
+        const result = await createUserWithEmailAndPassword(
           auth,
           email,
           password
         );
 
+        await updateProfile(result.user, { displayName: name });
+
+        /*
+          Authentication can succeed even if the profile write fails.
+          Keep the user signed in and report the profile problem clearly.
+        */
+        try {
+          await set(dbRef(`users/${result.user.uid}`), {
+            uid: result.user.uid,
+            name,
+            email,
+            userType: "local",
+            createdAt: new Date().toISOString()
+          });
+        } catch (profileError) {
+          console.error("Profile save failed:", profileError);
+
+          toast(
+            "Account created, but the profile could not be saved. Check Firebase Rules.",
+            true
+          );
+
+          hide("authSection");
+          $("authForm")?.reset();
+          return;
+        }
+
+        toast("Account created successfully.");
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
         toast("Login successful.");
       }
 
       hide("authSection");
-      $("authForm").reset();
+      $("authForm")?.reset();
     } catch (error) {
       console.error("Authentication error:", error);
-
-      message(
-        "authError",
-        readableAuthError(error),
-        true
-      );
+      message("authError", readableAuthError(error), true);
     } finally {
       button.disabled = false;
     }
@@ -688,7 +658,7 @@ function bindAuth() {
 }
 
 /* =========================================================
-   UPDATE USER HEADER AND ADMIN VISIBILITY
+   USER HEADER AND ADMIN VISIBILITY
 ========================================================= */
 
 function updateUserUI(user) {
@@ -700,30 +670,21 @@ function updateUserUI(user) {
   $("welcomePanel")?.classList.toggle("hidden", !loggedIn);
 
   const displayName =
-    userProfile.name ||
-    user?.displayName ||
-    user?.email ||
-    "User";
+    userProfile.name || user?.displayName || user?.email || "User";
 
   setText("headerUserName", displayName);
   setText("welcomeUserName", displayName);
 
   const isAdmin = userProfile.userType === "admin";
 
-  setText(
-    "userTypeLabel",
-    isAdmin ? "Administrator" : "SmartPark User"
-  );
-
+  setText("userTypeLabel", isAdmin ? "Administrator" : "SmartPark User");
   $("adminSection")?.classList.toggle("hidden", !isAdmin);
 
   if (cityData[selectedCity]) {
     renderCity(cityData[selectedCity]);
   }
 
-  if (isAdmin) {
-    renderAdminDashboard();
-  }
+  if (isAdmin) renderAdminDashboard();
 }
 
 /* =========================================================
@@ -731,17 +692,18 @@ function updateUserUI(user) {
 ========================================================= */
 
 function beginBooking(city, slotId) {
-  if (!currentUser) {
-    return openAuth("login");
+  if (!currentUser) return openAuth("login");
+
+  if (userProfile.userType === "admin") {
+    return toast("Admin accounts cannot make parking bookings.", true);
   }
 
-  if (
-    statusOf(cityData[city]?.slots?.[slotId]) !== "available"
-  ) {
-    return toast(
-      "This slot is no longer available. Choose another slot.",
-      true
-    );
+  if (!validCitySlot(city, slotId)) {
+    return toast("Invalid city or parking slot.", true);
+  }
+
+  if (statusOf(cityData[city]?.slots?.[slotId]) !== "available") {
+    return toast("This slot is no longer available. Choose another slot.", true);
   }
 
   pendingBooking = { city, slotId };
@@ -749,16 +711,21 @@ function beginBooking(city, slotId) {
   setText("bookingCityLabel", `City: ${cityLabel(city)}`);
   setText("bookingSlotLabel", `Slot: ${slotId.toUpperCase()}`);
 
-  $("bookingAmount").value = String(DEMO_AMOUNT);
+  if ($("bookingAmount")) {
+    $("bookingAmount").value = String(DEMO_AMOUNT);
+  }
 
   const startInput = $("bookingStart");
   const endInput = $("bookingEnd");
+
+  if (!startInput || !endInput) {
+    return toast("Booking date fields were not found in index.html.", true);
+  }
 
   const localDateTime = date => {
     const adjusted = new Date(
       date.getTime() - date.getTimezoneOffset() * 60000
     );
-
     return adjusted.toISOString().slice(0, 16);
   };
 
@@ -766,12 +733,8 @@ function beginBooking(city, slotId) {
 
   startInput.min = localDateTime(new Date());
   startInput.value = localDateTime(start);
-
   endInput.min = localDateTime(start);
-
-  endInput.value = localDateTime(
-    new Date(start.getTime() + 2 * 60 * 60000)
-  );
+  endInput.value = localDateTime(new Date(start.getTime() + 2 * 60 * 60000));
 
   clearMessage("bookingMessage");
   openModal("bookingModal");
@@ -802,10 +765,7 @@ async function releaseUnpaidBooking(booking) {
       });
     }
 
-    const bookingRef = dbRef(
-      `bookings/${booking.bookingId}`
-    );
-
+    const bookingRef = dbRef(`bookings/${booking.bookingId}`);
     const bookingSnapshot = await get(bookingRef);
 
     if (
@@ -820,170 +780,143 @@ async function releaseUnpaidBooking(booking) {
     }
   } catch (error) {
     console.error("Could not release unpaid booking:", error);
-
-    toast(
-      "The pending booking could not be fully cancelled. Check Firebase Rules.",
-      true
-    );
+    toast("Pending booking could not be fully cancelled. Check Firebase Rules.", true);
   }
 }
 
 function bindBooking() {
-  $("continuePaymentBtn")?.addEventListener(
-    "click",
-    async () => {
-      if (
-        !currentUser ||
-        !pendingBooking ||
-        pendingBooking.bookingId
-      ) {
-        if (!currentUser) {
-          message(
-            "bookingMessage",
-            "Log in and select a slot first.",
-            true
-          );
-        }
-
-        return;
+  $("continuePaymentBtn")?.addEventListener("click", async () => {
+    if (!currentUser || !pendingBooking || pendingBooking.bookingId) {
+      if (!currentUser) {
+        message("bookingMessage", "Log in and select a slot first.", true);
       }
-
-      const startValue = $("bookingStart").value;
-      const endValue = $("bookingEnd").value;
-
-      const start = new Date(startValue);
-      const end = new Date(endValue);
-
-      if (
-        !startValue ||
-        !endValue ||
-        Number.isNaN(start.getTime()) ||
-        Number.isNaN(end.getTime()) ||
-        start < new Date(Date.now() - 60000) ||
-        end <= start
-      ) {
-        return message(
-          "bookingMessage",
-          "Choose a valid start time and an end time after it.",
-          true
-        );
-      }
-
-      const button = $("continuePaymentBtn");
-      button.disabled = true;
-
-      let slotRef = null;
-      let reservationCreated = false;
-
-      try {
-        const { city, slotId } = pendingBooking;
-
-        slotRef = dbRef(`cities/${city}/slots/${slotId}`);
-
-        const transaction = await runTransaction(
-          slotRef,
-          slot => {
-            if (!slot || statusOf(slot) !== "available") {
-              return;
-            }
-
-            return {
-              ...slot,
-              status: "reserved",
-              sensorOccupied: slot.sensorOccupied === true,
-              bookedBy: currentUser.uid,
-              bookingId: "pending",
-              bookingTime: start.toISOString(),
-              expiryTime: end.toISOString()
-            };
-          }
-        );
-
-        if (!transaction.committed) {
-          throw new Error(
-            "This slot is no longer available. Choose another slot."
-          );
-        }
-
-        reservationCreated = true;
-
-        const bookingRef = push(dbRef("bookings"));
-        const bookingId = bookingRef.key;
-
-        const booking = {
-          bookingId,
-          userId: currentUser.uid,
-          userEmail: currentUser.email || "",
-          userName:
-            currentUser.displayName ||
-            userProfile.name ||
-            "",
-          city,
-          slotId,
-          bookingTime: start.toISOString(),
-          expiryTime: end.toISOString(),
-          createdAt: new Date().toISOString(),
-          status: "awaiting_payment",
-          amount: DEMO_AMOUNT,
-          currency: "INR",
-          paymentStatus: "pending"
-        };
-
-        await set(bookingRef, booking);
-        await update(slotRef, { bookingId });
-
-        pendingBooking = booking;
-
-        closeModal("bookingModal");
-
-        setText(
-          "paymentSummary",
-          `${cityLabel(city)} — ${slotId.toUpperCase()} — ` +
-            `${money(DEMO_AMOUNT)}. Demo payment only; no money will be charged.`
-        );
-
-        clearMessage("paymentMessage");
-        openModal("paymentModal");
-
-        renderBookings();
-      } catch (error) {
-        console.error("Booking creation failed:", error);
-
-        message(
-          "bookingMessage",
-          error.message || "Could not create booking.",
-          true
-        );
-
-        if (reservationCreated && slotRef) {
-          try {
-            const snapshot = await get(slotRef);
-            const slot = snapshot.val();
-
-            if (
-              slot?.bookedBy === currentUser.uid &&
-              slot?.bookingId === "pending"
-            ) {
-              await update(slotRef, {
-                status: "available",
-                bookedBy: null,
-                bookingId: null,
-                bookingTime: null,
-                expiryTime: null
-              });
-            }
-          } catch (cleanupError) {
-            console.error(
-              "Reservation cleanup failed:",
-              cleanupError
-            );
-          }
-        }
-      } finally {
-        button.disabled = false;
-      }
+      return;
     }
-  );
+
+    const startValue = $("bookingStart")?.value;
+    const endValue = $("bookingEnd")?.value;
+    const start = new Date(startValue);
+    const end = new Date(endValue);
+
+    if (
+      !startValue ||
+      !endValue ||
+      Number.isNaN(start.getTime()) ||
+      Number.isNaN(end.getTime()) ||
+      start < new Date(Date.now() - 60000) ||
+      end <= start
+    ) {
+      return message(
+        "bookingMessage",
+        "Choose a valid start time and an end time after it.",
+        true
+      );
+    }
+
+    const button = $("continuePaymentBtn");
+    button.disabled = true;
+
+    let slotRef = null;
+    let reservationCreated = false;
+
+    try {
+      const { city, slotId } = pendingBooking;
+
+      if (!validCitySlot(city, slotId)) {
+        throw new Error("Invalid city or slot.");
+      }
+
+      slotRef = dbRef(`cities/${city}/slots/${slotId}`);
+
+      const transaction = await runTransaction(slotRef, slot => {
+        if (!slot || statusOf(slot) !== "available") return;
+
+        return {
+          ...slot,
+          status: "reserved",
+          sensorOccupied: slot.sensorOccupied === true,
+          bookedBy: currentUser.uid,
+          bookingId: "pending",
+          bookingTime: start.toISOString(),
+          expiryTime: end.toISOString()
+        };
+      });
+
+      if (!transaction.committed) {
+        throw new Error("This slot is no longer available. Choose another slot.");
+      }
+
+      reservationCreated = true;
+
+      const bookingRef = push(dbRef("bookings"));
+      const bookingId = bookingRef.key;
+
+      const booking = {
+        bookingId,
+        userId: currentUser.uid,
+        userEmail: currentUser.email || "",
+        userName: currentUser.displayName || userProfile.name || "",
+        city,
+        slotId,
+        bookingTime: start.toISOString(),
+        expiryTime: end.toISOString(),
+        createdAt: new Date().toISOString(),
+        status: "awaiting_payment",
+        amount: DEMO_AMOUNT,
+        currency: "INR",
+        paymentStatus: "pending"
+      };
+
+      await set(bookingRef, booking);
+      await update(slotRef, { bookingId });
+
+      pendingBooking = booking;
+
+      closeModal("bookingModal");
+
+      setText(
+        "paymentSummary",
+        `${cityLabel(city)} — ${slotId.toUpperCase()} — ${money(DEMO_AMOUNT)}. Demo payment only; no real money will be charged.`
+      );
+
+      clearMessage("paymentMessage");
+      openModal("paymentModal");
+      await renderBookings();
+
+    } catch (error) {
+      console.error("Booking creation failed:", error);
+
+      message(
+        "bookingMessage",
+        error.message || "Could not create booking.",
+        true
+      );
+
+      if (reservationCreated && slotRef) {
+        try {
+          const snapshot = await get(slotRef);
+          const slot = snapshot.val();
+
+          if (
+            slot?.bookedBy === currentUser.uid &&
+            slot?.bookingId === "pending"
+          ) {
+            await update(slotRef, {
+              status: "available",
+              bookedBy: null,
+              bookingId: null,
+              bookingTime: null,
+              expiryTime: null
+            });
+          }
+        } catch (cleanupError) {
+          console.error("Reservation cleanup failed:", cleanupError);
+        }
+      }
+    } finally {
+      button.disabled = false;
+    }
+  });
 }
 
 /* =========================================================
@@ -991,81 +924,73 @@ function bindBooking() {
 ========================================================= */
 
 function bindPayment() {
-  $("confirmDemoPaymentBtn")?.addEventListener(
-    "click",
-    async () => {
-      const booking = pendingBooking;
+  $("confirmDemoPaymentBtn")?.addEventListener("click", async () => {
+    const booking = pendingBooking;
 
-      if (
-        !currentUser ||
-        !booking?.bookingId ||
-        booking.status !== "awaiting_payment"
-      ) {
-        return message(
-          "paymentMessage",
-          "No pending booking found. Close this window and try booking again.",
-          true
-        );
-      }
-
-      const button = $("confirmDemoPaymentBtn");
-      button.disabled = true;
-
-      try {
-        const paymentRef = push(dbRef("payments"));
-        const paymentId = paymentRef.key;
-        const paidAt = new Date().toISOString();
-
-        await set(paymentRef, {
-          paymentId,
-          bookingId: booking.bookingId,
-          userId: currentUser.uid,
-          userEmail: currentUser.email || "",
-          city: booking.city,
-          slotId: booking.slotId,
-          amount: DEMO_AMOUNT,
-          currency: "INR",
-          paymentMethod: "DEMO",
-          status: "SUCCESS_DEMO",
-          paidAt
-        });
-
-        await update(
-          dbRef(`bookings/${booking.bookingId}`),
-          {
-            status: "confirmed",
-            paymentStatus: "SUCCESS_DEMO",
-            paymentId,
-            paidAt
-          }
-        );
-
-        pendingBooking.status = "confirmed";
-        pendingBooking.paymentStatus = "SUCCESS_DEMO";
-
-        closeModal("paymentModal");
-        pendingBooking = null;
-
-        toast(
-          "Demo payment successful. No real money was charged."
-        );
-
-        await renderBookings();
-        await renderPayments();
-      } catch (error) {
-        console.error("Demo payment update failed:", error);
-
-        message(
-          "paymentMessage",
-          error.message ||
-            "Demo payment failed. No real payment was attempted.",
-          true
-        );
-      } finally {
-        button.disabled = false;
-      }
+    if (
+      !currentUser ||
+      !booking?.bookingId ||
+      booking.status !== "awaiting_payment"
+    ) {
+      return message(
+        "paymentMessage",
+        "No pending booking found. Close this window and try booking again.",
+        true
+      );
     }
-  );
+
+    const button = $("confirmDemoPaymentBtn");
+    button.disabled = true;
+
+    try {
+      const paymentRef = push(dbRef("payments"));
+      const paymentId = paymentRef.key;
+      const paidAt = new Date().toISOString();
+
+      await set(paymentRef, {
+        paymentId,
+        bookingId: booking.bookingId,
+        userId: currentUser.uid,
+        userEmail: currentUser.email || "",
+        city: booking.city,
+        slotId: booking.slotId,
+        amount: DEMO_AMOUNT,
+        currency: "INR",
+        paymentMethod: "DEMO",
+        status: "SUCCESS_DEMO",
+        paidAt
+      });
+
+      await update(dbRef(`bookings/${booking.bookingId}`), {
+        status: "confirmed",
+        paymentStatus: "SUCCESS_DEMO",
+        paymentId,
+        paidAt
+      });
+
+      pendingBooking.status = "confirmed";
+      pendingBooking.paymentStatus = "SUCCESS_DEMO";
+
+      closeModal("paymentModal");
+      pendingBooking = null;
+
+      toast("Demo payment successful. No real money was charged.");
+
+      await renderBookings();
+      await renderPayments();
+
+    } catch (error) {
+      console.error("Demo payment update failed:", error);
+
+      message(
+        "paymentMessage",
+        error.message || "Demo payment failed. No real payment was attempted.",
+        true
+      );
+    } finally {
+      button.disabled = false;
+    }
+  });
 }
 
 /* =========================================================
@@ -1094,12 +1019,8 @@ async function renderBookings() {
 
     const snapshot = await get(bookingsQuery);
 
-    const records = Object.values(
-      snapshot.val() || {}
-    ).sort((a, b) =>
-      String(b.createdAt || "").localeCompare(
-        String(a.createdAt || "")
-      )
+    const records = Object.values(snapshot.val() || {}).sort((a, b) =>
+      String(b.createdAt || "").localeCompare(String(a.createdAt || ""))
     );
 
     if (!records.length) {
@@ -1112,9 +1033,14 @@ async function renderBookings() {
     }
 
     box.innerHTML = records.map(booking => {
+      const expiry = new Date(booking.expiryTime).getTime();
+      const start = new Date(booking.bookingTime).getTime();
+
       const expired =
-        booking.expiryTime &&
-        new Date(booking.expiryTime).getTime() < Date.now();
+        !Number.isFinite(expiry) || expiry <= Date.now();
+
+      const notStarted =
+        Number.isFinite(start) && start > Date.now();
 
       const statusText =
         expired && booking.status === "confirmed"
@@ -1122,7 +1048,10 @@ async function renderBookings() {
           : booking.status || "unknown";
 
       const canRequestGate =
-        booking.status === "confirmed" && !expired;
+        booking.status === "confirmed" &&
+        !expired &&
+        !notStarted &&
+        validCitySlot(booking.city, booking.slotId);
 
       return `
         <article class="booking-card">
@@ -1139,79 +1068,136 @@ async function renderBookings() {
 
           ${
             canRequestGate
-              ? `<button
-                   type="button"
-                   class="btn btn-outline request-gate-btn"
-                   data-booking-id="${escapeHTML(booking.bookingId)}"
-                   data-booking-city="${escapeHTML(booking.city)}"
-                 >
-                   Request reserved entry
-                 </button>`
-              : ""
+              ? `
+                <button
+                  type="button"
+                  class="btn btn-outline request-gate-btn"
+                  data-booking-id="${escapeHTML(booking.bookingId)}"
+                >
+                  I Have Arrived
+                </button>
+              `
+              : notStarted && booking.status === "confirmed"
+                ? "<p>Your reservation has not started yet.</p>"
+                : ""
           }
         </article>
       `;
     }).join("");
 
     box.querySelectorAll(".request-gate-btn").forEach(button => {
-      button.addEventListener("click", () => {
+      button.addEventListener("click", async () => {
         const booking = records.find(
           item => item.bookingId === button.dataset.bookingId
         );
 
         if (booking) {
-          requestReservedEntry(booking, button);
+          await requestReservedEntry(booking, button);
         }
       });
     });
+
   } catch (error) {
     console.error("Could not load bookings:", error);
 
     box.innerHTML = `
       <div class="empty-state">
-        <p>
-          Could not load bookings. Confirm your Firebase Database Rules.
-        </p>
+        <p>Could not load bookings. Confirm your Firebase Database Rules.</p>
       </div>
     `;
   }
 }
 
 /* =========================================================
-   RESERVED ENTRY REQUEST FOR ESP32
+   RESERVED ENTRY: I HAVE ARRIVED
 ========================================================= */
 
 async function requestReservedEntry(booking, button) {
+  if (!currentUser) {
+    return toast("Please log in first.", true);
+  }
+
   if (
-    !currentUser ||
     booking.userId !== currentUser.uid ||
     booking.status !== "confirmed"
   ) {
+    return toast("Only your own confirmed booking can request entry.", true);
+  }
+
+  if (!validCitySlot(booking.city, booking.slotId)) {
+    return toast("Invalid booking city or slot.", true);
+  }
+
+  const start = new Date(booking.bookingTime).getTime();
+  const expiry = new Date(booking.expiryTime).getTime();
+  const now = Date.now();
+
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(expiry) ||
+    now < start ||
+    now >= expiry
+  ) {
     return toast(
-      "Only your confirmed booking can request entry.",
+      "Your booking is not currently valid. Check its start and end times.",
       true
     );
   }
 
-  if (
-    new Date(booking.expiryTime).getTime() <= Date.now()
-  ) {
-    return toast("This booking has expired.", true);
-  }
-
+  const originalText = button.textContent;
   button.disabled = true;
+  button.textContent = "Sending Request...";
 
   try {
     const requestRef = dbRef(`gateRequests/${booking.city}`);
     const existing = await get(requestRef);
 
-    if (
-      existing.exists() &&
-      existing.val()?.userId !== currentUser.uid
-    ) {
-      throw new Error(
-        "Another entry request is being processed. Wait a moment and retry."
-      );
+    if (existing.exists()) {
+      const previous = existing.val() || {};
+
+      const previousTime = new Date(
+        previous.requestedAt || ""
+      ).getTime();
+
+      const isRecent =
+        Number.isFinite(previousTime) &&
+        now - previousTime < 2 * 60 * 1000;
+
+      const previousStatus = String(
+        previous.status || "pending"
+      ).toLowerCase();
+
+      const isPending = ![
+        "processed",
+        "rejected",
+        "completed",
+        "expired"
+      ].includes(previousStatus);
+
+      if (
+        isRecent &&
+        isPending &&
+        previous.userId !== currentUser.uid
+      ) {
+        throw new Error(
+          "Another arrival request is being processed. Please wait and retry."
+        );
+      }
+
+      if (
+        isRecent &&
+        isPending &&
+        previous.userId === currentUser.uid &&
+        previous.bookingId === booking.bookingId
+      ) {
+        button.textContent = "Arrival Request Sent";
+
+        toast(
+          "Your arrival request is already waiting for the ESP32."
+        );
+
+        return;
+      }
     }
 
     const requestId = push(dbRef("requestIds")).key;
@@ -1221,23 +1207,29 @@ async function requestReservedEntry(booking, button) {
       userId: currentUser.uid,
       bookingId: booking.bookingId,
       city: booking.city,
+      slotId: booking.slotId,
       entryType: "reserved",
+      status: "pending",
       requestedAt: new Date().toISOString()
     });
 
+    button.textContent = "Arrival Request Sent";
+
     toast(
-      "Entry request sent to the ESP32. The gate will open only if the booking is valid and the ESP32 is online."
+      "Arrival request sent. The ESP32 must verify your booking before opening the gate."
     );
+
   } catch (error) {
-    console.error("Gate request failed:", error);
+    console.error("Reserved entry request failed:", error);
+
+    button.disabled = false;
+    button.textContent = originalText;
 
     toast(
       error.message ||
-        "Could not send gate request. Check Firebase Rules.",
+        "Could not send arrival request. Check Firebase Database Rules.",
       true
     );
-  } finally {
-    button.disabled = false;
   }
 }
 
@@ -1267,12 +1259,8 @@ async function renderPayments() {
 
     const snapshot = await get(paymentsQuery);
 
-    const records = Object.values(
-      snapshot.val() || {}
-    ).sort((a, b) =>
-      String(b.paidAt || "").localeCompare(
-        String(a.paidAt || "")
-      )
+    const records = Object.values(snapshot.val() || {}).sort((a, b) =>
+      String(b.paidAt || "").localeCompare(String(a.paidAt || ""))
     );
 
     if (!records.length) {
@@ -1297,14 +1285,13 @@ async function renderPayments() {
         <p>Payment ID: ${escapeHTML(payment.paymentId || "")}</p>
       </article>
     `).join("");
+
   } catch (error) {
     console.error("Could not load payments:", error);
 
     box.innerHTML = `
       <div class="empty-state">
-        <p>
-          Could not load payments. Confirm your Firebase Database Rules.
-        </p>
+        <p>Could not load payments. Confirm your Firebase Database Rules.</p>
       </div>
     `;
   }
@@ -1316,24 +1303,18 @@ async function renderPayments() {
 
 function bindProfile() {
   $("profileBtn")?.addEventListener("click", () => {
-    if (!currentUser) {
-      return openAuth("login");
-    }
+    if (!currentUser) return openAuth("login");
 
     $("profileName").value =
       userProfile.name || currentUser.displayName || "";
 
     $("profileEmail").value = currentUser.email || "";
-
-    $("profileUserType").value =
-      userProfile.userType || "local";
+    $("profileUserType").value = userProfile.userType || "local";
 
     clearMessage("profileMessage");
     show("profileSection");
 
-    $("profileSection")?.scrollIntoView({
-      behavior: "smooth"
-    });
+    $("profileSection")?.scrollIntoView({ behavior: "smooth" });
   });
 
   $("closeProfileBtn")?.addEventListener("click", () => {
@@ -1343,39 +1324,28 @@ function bindProfile() {
   $("saveProfileBtn")?.addEventListener("click", async () => {
     if (!currentUser) return;
 
-    const name = $("profileName").value.trim();
+    const name = $("profileName")?.value.trim();
 
     if (!name) {
-      return message(
-        "profileMessage",
-        "Enter your name.",
-        true
-      );
+      return message("profileMessage", "Enter your name.", true);
     }
 
     const button = $("saveProfileBtn");
     button.disabled = true;
 
     try {
-      await updateProfile(currentUser, {
-        displayName: name
-      });
+      await updateProfile(currentUser, { displayName: name });
 
-      await update(
-        dbRef(`users/${currentUser.uid}`),
-        { name }
-      );
+      await update(dbRef(`users/${currentUser.uid}`), { name });
 
       userProfile.name = name;
-
       setText("headerUserName", name);
       setText("welcomeUserName", name);
 
-      message(
-        "profileMessage",
-        "Profile updated successfully."
-      );
+      message("profileMessage", "Profile updated successfully.");
     } catch (error) {
+      console.error("Profile update failed:", error);
+
       message(
         "profileMessage",
         error.message || "Could not update profile.",
@@ -1389,27 +1359,18 @@ function bindProfile() {
 
 /* =========================================================
    ADMIN DASHBOARD
-   Admin access must be configured securely in Firebase.
 ========================================================= */
 
 async function renderAdminDashboard() {
-  if (
-    userProfile.userType !== "admin" ||
-    !currentUser
-  ) {
-    return;
-  }
+  if (userProfile.userType !== "admin" || !currentUser) return;
 
   try {
-    const [
-      usersSnapshot,
-      bookingsSnapshot,
-      paymentsSnapshot
-    ] = await Promise.all([
-      get(dbRef("users")),
-      get(dbRef("bookings")),
-      get(dbRef("payments"))
-    ]);
+    const [usersSnapshot, bookingsSnapshot, paymentsSnapshot] =
+      await Promise.all([
+        get(dbRef("users")),
+        get(dbRef("bookings")),
+        get(dbRef("payments"))
+      ]);
 
     const users = Object.values(usersSnapshot.val() || {});
     const bookings = Object.values(bookingsSnapshot.val() || {});
@@ -1440,10 +1401,7 @@ async function renderAdminDashboard() {
                 <tr>
                   <td>${escapeHTML(b.bookingId || "")}</td>
                   <td>${escapeHTML(b.userEmail || b.userId || "")}</td>
-                  <td>
-                    ${escapeHTML(cityLabel(b.city))}
-                    / ${escapeHTML(b.slotId || "")}
-                  </td>
+                  <td>${escapeHTML(cityLabel(b.city))} / ${escapeHTML(b.slotId || "")}</td>
                   <td>${escapeHTML(b.status || "")}</td>
                   <td>${escapeHTML(b.paymentStatus || "")}</td>
                 </tr>
@@ -1472,10 +1430,7 @@ async function renderAdminDashboard() {
                 <tr>
                   <td>${escapeHTML(p.paymentId || "")}</td>
                   <td>${escapeHTML(p.userEmail || p.userId || "")}</td>
-                  <td>
-                    ${escapeHTML(cityLabel(p.city))}
-                    / ${escapeHTML(p.slotId || "")}
-                  </td>
+                  <td>${escapeHTML(cityLabel(p.city))} / ${escapeHTML(p.slotId || "")}</td>
                   <td>${escapeHTML(money(p.amount))}</td>
                   <td>${escapeHTML(p.status || "")}</td>
                 </tr>
@@ -1487,12 +1442,13 @@ async function renderAdminDashboard() {
     }
 
     clearMessage("adminMessage");
+
   } catch (error) {
     console.error("Admin dashboard error:", error);
 
     message(
       "adminMessage",
-      "Admin access was not granted by Firebase Rules. Check the admin setup instructions.",
+      "Admin access was not granted by Firebase Rules. Check the admin setup.",
       true
     );
   }
@@ -1518,9 +1474,7 @@ async function cancelPendingPaymentIfNeeded() {
 
 function bindPageControls() {
   $("heroParkingBtn")?.addEventListener("click", () => {
-    $("parkingSection")?.scrollIntoView({
-      behavior: "smooth"
-    });
+    $("parkingSection")?.scrollIntoView({ behavior: "smooth" });
   });
 
   $("refreshBookingsBtn")?.addEventListener("click", () => {
@@ -1563,18 +1517,24 @@ function bindPageControls() {
 
 function listenAuth() {
   onAuthStateChanged(auth, async user => {
+    const version = ++authListenerVersion;
+
     currentUser = user;
     userProfile = {};
 
     if (user) {
       try {
-        const profileSnapshot = await get(
-          dbRef(`users/${user.uid}`)
-        );
+        const profileSnapshot = await get(dbRef(`users/${user.uid}`));
+
+        if (version !== authListenerVersion) return;
 
         if (profileSnapshot.exists()) {
           userProfile = profileSnapshot.val() || {};
         } else {
+          /*
+            Do not silently grant admin privileges here.
+            New users are always regular users.
+          */
           userProfile = {
             uid: user.uid,
             name: user.displayName || "",
@@ -1582,13 +1542,10 @@ function listenAuth() {
             userType: "local"
           };
 
-          await set(
-            dbRef(`users/${user.uid}`),
-            {
-              ...userProfile,
-              createdAt: new Date().toISOString()
-            }
-          );
+          await set(dbRef(`users/${user.uid}`), {
+            ...userProfile,
+            createdAt: new Date().toISOString()
+          });
         }
       } catch (error) {
         console.error("Profile load failed:", error);
@@ -1600,11 +1557,13 @@ function listenAuth() {
         };
 
         toast(
-          "Logged in, but profile data could not be read. Check Firebase Rules.",
+          "Logged in, but profile data could not be read or saved. Check Firebase Rules.",
           true
         );
       }
     }
+
+    if (version !== authListenerVersion) return;
 
     updateUserUI(user);
 
