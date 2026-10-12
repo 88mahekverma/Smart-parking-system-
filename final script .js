@@ -7,7 +7,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
@@ -18,119 +19,144 @@ import {
   update,
   push,
   onValue,
-  runTransaction
+  runTransaction,
+  query,
+  orderByChild,
+  equalTo
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// ======================================================
-// SMARTPARK FIREBASE CONFIGURATION
-// Copy these values from Firebase Console > Project settings
-// ======================================================
+/* =========================================================
+   SMARTPARK FIREBASE CONFIGURATION
+========================================================= */
 
 const firebaseConfig = {
-  apiKey: "PASTE_YOUR_FIREBASE_API_KEY",
+  apiKey: "AIzaSyDCa1T-htDrZsGygxNbKkZxbrYEhF5JYRQ",
   authDomain: "smart-parking-system-d46c9.firebaseapp.com",
-  databaseURL: "https://smart-parking-system-d46c9-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL:
+    "https://smart-parking-system-d46c9-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "smart-parking-system-d46c9",
   storageBucket: "smart-parking-system-d46c9.firebasestorage.app",
-  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
-  appId: "PASTE_YOUR_FIREBASE_APP_ID"
+  messagingSenderId: "456268505088",
+  appId: "1:456268505088:web:e577fac7746f3a9bc2f8e5",
+  measurementId: "G-DH2755KD5Z"
 };
 
-const ROOT = "smartParking";
+/*
+  IMPORTANT:
+  Your screenshot shows:
+  availableSlots
+      └── smartParking
+          └── cities
+              ├── surat
+              └── navsari
+*/
+const ROOT = "availableSlots/smartParking";
+
 const CITIES = ["surat", "navsari"];
 const SLOT_IDS = ["slot1", "slot2"];
+const DEMO_AMOUNT = 100;
 
-let app;
-let auth;
-let db;
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+/* =========================================================
+   APPLICATION STATE
+========================================================= */
+
 let currentUser = null;
+let userProfile = {};
 let selectedCity = "surat";
-let cityUnsubscribe = null;
 let authMode = "login";
 let pendingBooking = null;
-let cityCache = {};
 
-// ======================================================
-// COMMON HELPERS
-// ======================================================
+const cityData = {};
+const cityUnsubscribers = {};
 
 const $ = id => document.getElementById(id);
 
 const dbRef = path => ref(db, `${ROOT}/${path}`);
+
+/* =========================================================
+   HELPER FUNCTIONS
+========================================================= */
 
 function setText(id, value) {
   const element = $(id);
   if (element) element.textContent = value ?? "";
 }
 
-function showModal(id) {
+function show(id) {
+  $(id)?.classList.remove("hidden");
+}
+
+function hide(id) {
+  $(id)?.classList.add("hidden");
+}
+
+function message(id, value, isError = false) {
   const element = $(id);
   if (!element) return;
 
-  if (typeof element.showModal === "function") {
-    if (!element.open) element.showModal();
-  } else {
-    element.hidden = false;
-  }
+  element.textContent = value;
+  element.classList.remove(
+    "hidden",
+    "message-error",
+    "message-success"
+  );
+
+  element.classList.add(
+    isError ? "message-error" : "message-success"
+  );
 }
 
-function closeModal(id) {
+function clearMessage(id) {
   const element = $(id);
+
   if (!element) return;
 
-  if (typeof element.close === "function" && element.open) {
-    element.close();
-  } else {
-    element.hidden = true;
-  }
+  element.textContent = "";
+  element.classList.add("hidden");
+  element.classList.remove(
+    "message-error",
+    "message-success"
+  );
 }
 
-function showError(id, message) {
-  setText(id, message);
-}
+function toast(value, isError = false) {
+  const container = $("toastContainer");
 
-function toast(message, error = false) {
-  const element = $("toastRegion");
-
-  if (!element) {
-    console.log(message);
+  if (!container) {
+    console.log(value);
     return;
   }
 
-  element.textContent = message;
-  element.classList.toggle("is-error", error);
-  element.classList.add("is-visible");
+  const item = document.createElement("div");
 
-  clearTimeout(toast.timer);
+  item.className = isError ? "toast toast-error" : "toast";
+  item.setAttribute("role", "status");
+  item.textContent = value;
 
-  toast.timer = setTimeout(() => {
-    element.classList.remove("is-visible");
-  }, 3500);
+  container.appendChild(item);
+
+  window.setTimeout(() => item.remove(), 4200);
 }
 
-function cityName(city) {
+function cityLabel(city) {
   return city === "navsari" ? "Navsari" : "Surat";
 }
 
-function getSlotStatus(slot) {
-  if (!slot) return "available";
-
-  if (slot.sensorOccupied === true) return "occupied";
-
-  return String(slot.status || "available").toLowerCase();
-}
-
 function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
     "'": "&#39;"
-  })[char]);
+  })[character]);
 }
 
-function formatDate(value) {
+function dateLabel(value) {
   if (!value) return "Not set";
 
   const date = new Date(value);
@@ -140,375 +166,298 @@ function formatDate(value) {
     : date.toLocaleString();
 }
 
-function formatMoney(amount) {
+function money(value) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 2
-  }).format(Number(amount) || 0);
+  }).format(Number(value) || 0);
 }
 
-function isFirebaseConfigMissing() {
-  return (
-    firebaseConfig.apiKey.startsWith("PASTE_") ||
-    firebaseConfig.appId.startsWith("PASTE_") ||
-    firebaseConfig.messagingSenderId.startsWith("PASTE_")
-  );
-}
+function statusOf(slot) {
+  if (!slot) return "available";
 
-// ======================================================
-// INITIALIZE FIREBASE
-// ======================================================
-
-function initializeFirebase() {
-  if (isFirebaseConfigMissing()) {
-    setText("connectionStatus", "Firebase config required");
-
-    toast(
-      "Paste your real Firebase web configuration into script.js.",
-      true
-    );
-
-    return false;
+  if (
+    slot.sensorOccupied === true ||
+    String(slot.status || "").toLowerCase() === "occupied"
+  ) {
+    return "occupied";
   }
 
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getDatabase(app);
+  const status = String(
+    slot.status || "available"
+  ).toLowerCase();
 
-    return true;
-  } catch (error) {
-    console.error("Firebase initialization failed:", error);
-
-    setText("connectionStatus", "Firebase setup error");
-
-    toast("Firebase initialization failed.", true);
-
-    return false;
-  }
+  return ["available", "reserved", "occupied"].includes(status)
+    ? status
+    : "available";
 }
 
-// ======================================================
-// CREATE MISSING FIREBASE STARTER DATA
-// Does not overwrite existing values.
-// ======================================================
+function openModal(id) {
+  const element = $(id);
+  if (!element) return;
 
-async function initializeParkingData() {
+  element.classList.remove("hidden");
+  element.setAttribute("aria-hidden", "false");
+}
+
+function closeModal(id) {
+  const element = $(id);
+  if (!element) return;
+
+  element.classList.add("hidden");
+  element.setAttribute("aria-hidden", "true");
+}
+
+function countsForCity(data) {
+  const counts = {
+    total: SLOT_IDS.length,
+    available: 0,
+    reserved: 0,
+    occupied: 0
+  };
+
+  for (const id of SLOT_IDS) {
+    counts[statusOf(data?.slots?.[id])]++;
+  }
+
+  return counts;
+}
+
+/* =========================================================
+   LIVE FIREBASE PARKING LISTENERS
+========================================================= */
+
+function startCityListeners() {
   for (const city of CITIES) {
-    const parkingRef = dbRef(`cities/${city}/parking`);
-    const parkingSnapshot = await get(parkingRef);
-
-    if (!parkingSnapshot.exists()) {
-      await set(parkingRef, {
-        totalSlots: 2,
-        available: 2,
-        reserved: 0,
-        occupied: 0,
-        parkingFull: false
-      });
+    if (cityUnsubscribers[city]) {
+      cityUnsubscribers[city]();
     }
 
-    const gateRef = dbRef(`cities/${city}/gate`);
-    const gateSnapshot = await get(gateRef);
+    cityUnsubscribers[city] = onValue(
+      dbRef(`cities/${city}`),
 
-    if (!gateSnapshot.exists()) {
-      await set(gateRef, {
-        open: false,
-        status: "CLOSED",
-        parkingFull: false,
-        entryAllowed: false,
-        entryType: "",
-        requestId: null,
-        lastOpenedAt: null
-      });
-    }
+      snapshot => {
+        if (!snapshot.exists()) {
+          delete cityData[city];
 
-    for (const slotId of SLOT_IDS) {
-      const slotRef = dbRef(`cities/${city}/slots/${slotId}`);
-      const slotSnapshot = await get(slotRef);
+          setText(
+            "connectionStatus",
+            `Waiting for ${cityLabel(city)} database data`
+          );
 
-      if (!slotSnapshot.exists()) {
-        await set(slotRef, {
-          status: "available",
-          sensorOccupied: false,
-          bookingId: null,
-          bookedBy: null,
-          bookingTime: null,
-          expiryTime: null
-        });
+          if (city === selectedCity) {
+            setText("parkingLiveStatus", "No data");
+
+            message(
+              "parkingError",
+              `No data at /${ROOT}/cities/${city}. ` +
+                "Check the database path in Firebase.",
+              true
+            );
+
+            renderMissingSlots();
+            renderHero();
+          }
+
+          return;
+        }
+
+        cityData[city] = snapshot.val();
+
+        setText(
+          "connectionStatus",
+          "Firebase connected · live updates active"
+        );
+
+        renderHero();
+
+        if (city === selectedCity) {
+          clearMessage("parkingError");
+          setText("parkingLiveStatus", "Live");
+
+          setText(
+            "parkingUpdatedAt",
+            `Last updated: ${new Date().toLocaleTimeString()}`
+          );
+
+          renderCity(cityData[city]);
+        }
+      },
+
+      error => {
+        console.error(
+          `Firebase listener (${city}) failed:`,
+          error
+        );
+
+        setText("connectionStatus", "Firebase read failed");
+
+        if (city === selectedCity) {
+          message(
+            "parkingError",
+            `${error.message}. Check Firebase Database Rules and URL.`,
+            true
+          );
+        }
       }
-    }
-  }
-
-  const thresholdRef = dbRef("system/ultrasonicThresholdCm");
-
-  if (!(await get(thresholdRef)).exists()) {
-    await set(thresholdRef, 10);
-  }
-
-  const countRef = dbRef("system/slotCountPerCity");
-
-  if (!(await get(countRef)).exists()) {
-    await set(countRef, 2);
+    );
   }
 }
 
-// ======================================================
-// CITY SELECTION
-// ======================================================
+function renderMissingSlots() {
+  const box = $("slotsContainer");
 
-function selectCity(city) {
+  if (box) {
+    box.innerHTML = `
+      <div class="empty-state">
+        <p>
+          Parking data was not found at the expected Firebase path.
+          Check availableSlots/smartParking/cities.
+        </p>
+      </div>
+    `;
+  }
+}
+
+function chooseCity(city) {
   if (!CITIES.includes(city)) return;
 
   selectedCity = city;
 
   document.querySelectorAll("[data-city]").forEach(button => {
-    button.classList.toggle(
-      "active",
-      button.dataset.city === city
+    const active = button.dataset.city === city;
+
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+
+  setText("selectedCityName", `${cityLabel(city)} Parking`);
+  setText("gateCityName", `${cityLabel(city)} Gate`);
+
+  const data = cityData[city];
+
+  if (data) {
+    clearMessage("parkingError");
+    setText("parkingLiveStatus", "Live");
+    renderCity(data);
+  } else {
+    setText("parkingLiveStatus", "No data");
+
+    message(
+      "parkingError",
+      `No data at /${ROOT}/cities/${city}. Check Firebase Data and Rules.`,
+      true
     );
 
-    button.setAttribute(
-      "aria-pressed",
-      String(button.dataset.city === city)
-    );
-  });
-
-  if ($("bookingCity")) {
-    $("bookingCity").value = city;
+    renderMissingSlots();
   }
-
-  setText("selectedCityName", cityName(city));
-
-  subscribeToCity();
-}
-
-function bindCityButtons() {
-  document.querySelectorAll("[data-city]").forEach(button => {
-    button.addEventListener("click", () => {
-      selectCity(button.dataset.city);
-    });
-  });
-
-  $("citySuratBtn")?.addEventListener("click", () => {
-    selectCity("surat");
-  });
-
-  $("cityNavsariBtn")?.addEventListener("click", () => {
-    selectCity("navsari");
-  });
-}
-
-// ======================================================
-// LIVE FIREBASE CITY DATA
-// Reads /smartParking/cities/surat or navsari
-// ======================================================
-
-function subscribeToCity() {
-  if (!db) return;
-
-  if (cityUnsubscribe) {
-    cityUnsubscribe();
-    cityUnsubscribe = null;
-  }
-
-  const cityRef = dbRef(`cities/${selectedCity}`);
-
-  cityUnsubscribe = onValue(
-    cityRef,
-    snapshot => {
-      if (!snapshot.exists()) {
-        setText("connectionStatus", "City data not found");
-
-        const slots = $("parkingSlots");
-
-        if (slots) {
-          slots.textContent =
-            `No data found at /${ROOT}/cities/${selectedCity}.`;
-        }
-
-        return;
-      }
-
-      cityCache[selectedCity] = snapshot.val();
-
-      setText("connectionStatus", "Firebase live");
-
-      renderCity(snapshot.val());
-      renderAllCityTotals();
-    },
-    error => {
-      console.error("Firebase read error:", error);
-
-      setText("connectionStatus", "Firebase read failed");
-
-      toast(
-        "Cannot read parking data. Check Firebase Database rules.",
-        true
-      );
-    }
-  );
 }
 
 function renderCity(data) {
-  const parking = data.parking || {};
+  const counts = countsForCity(data);
 
-  setText("cityAvailable", parking.available ?? 0);
-  setText("cityReserved", parking.reserved ?? 0);
-  setText("cityOccupied", parking.occupied ?? 0);
-  setText("cityTotal", parking.totalSlots ?? 2);
+  setText("totalSlots", counts.total);
+  setText("availableSlots", counts.available);
+  setText("reservedSlots", counts.reserved);
+  setText("occupiedSlots", counts.occupied);
 
-  setText(
-    "cityParkingFull",
-    parking.parkingFull ? "Parking full" : "Spaces available"
-  );
+  const slots = data?.slots || {};
+  const box = $("slotsContainer");
 
-  renderSlots(data.slots || {});
-  renderGate(data.gate || {});
-  updateBookingSlotOptions(data.slots || {});
-}
+  if (box) {
+    box.innerHTML = SLOT_IDS.map(id => {
+      const slot = slots[id] || {};
+      const status = statusOf(slot);
+      const label = status[0].toUpperCase() + status.slice(1);
+      const enabled =
+        Boolean(currentUser) && status === "available";
 
-function renderSlots(slots) {
-  const container = $("parkingSlots");
+      const detail =
+        status === "available"
+          ? "This slot is available to reserve."
+          : status === "reserved"
+            ? "This slot is reserved for a booking."
+            : "The slot sensor detects a vehicle.";
 
-  if (!container) return;
+      return `
+        <article class="parking-slot ${status}">
+          <div class="slot-header">
+            <strong>${id.toUpperCase()}</strong>
+            <span class="slot-status">${label}</span>
+          </div>
 
-  container.innerHTML = SLOT_IDS.map(slotId => {
-    const slot = slots[slotId] || {};
-    const status = getSlotStatus(slot);
+          <p class="slot-details">${detail}</p>
 
-    const occupied = status === "occupied";
-    const reserved = status === "reserved";
+          <button
+            type="button"
+            class="btn btn-primary slot-book-btn"
+            data-book-slot="${id}"
+            ${enabled ? "" : "disabled"}
+          >
+            ${
+              !currentUser
+                ? "Login to book"
+                : enabled
+                  ? "Reserve slot"
+                  : label
+            }
+          </button>
+        </article>
+      `;
+    }).join("");
 
-    const className = occupied
-      ? "occupied"
-      : reserved
-        ? "reserved"
-        : "available";
-
-    const label = occupied
-      ? "Occupied"
-      : reserved
-        ? "Reserved"
-        : "Available";
-
-    const disabled = !currentUser || occupied || reserved;
-
-    return `
-      <article class="slot-card slot-${className}">
-        <div class="slot-card-top">
-          <span class="slot-number">${slotId.toUpperCase()}</span>
-          <span class="slot-status status-${className}">${label}</span>
-        </div>
-
-        <div class="slot-car-icon" aria-hidden="true">▰</div>
-
-        <h3>${label}</h3>
-
-        <p>
-          ${occupied
-            ? "A vehicle is detected in this space."
-            : reserved
-              ? "This space has a reservation."
-              : "This space is ready to reserve."}
-        </p>
-
-        <button
-          type="button"
-          class="btn btn-primary slot-book-btn"
-          data-book-slot="${slotId}"
-          ${disabled ? "disabled" : ""}
-        >
-          ${!currentUser
-            ? "Login to book"
-            : occupied || reserved
-              ? label
-              : "Reserve slot"}
-        </button>
-      </article>
-    `;
-  }).join("");
-
-  container.querySelectorAll("[data-book-slot]").forEach(button => {
-    button.addEventListener("click", () => {
-      startBooking(selectedCity, button.dataset.bookSlot);
+    box.querySelectorAll("[data-book-slot]").forEach(button => {
+      button.addEventListener("click", () => {
+        beginBooking(selectedCity, button.dataset.bookSlot);
+      });
     });
-  });
-}
+  }
 
-function renderGate(gate) {
-  const open =
+  const gate = data?.gate || {};
+
+  const isOpen =
     gate.open === true ||
-    String(gate.status).toUpperCase() === "OPEN";
-
-  setText("gateStatus", open ? "GATE OPEN" : "GATE CLOSED");
+    String(gate.status || "").toUpperCase() === "OPEN";
 
   setText(
     "gateStatusText",
-    open ? "Entry approved" : "Waiting for an entry request"
+    isOpen
+      ? `Gate is open${gate.entryType ? ` (${gate.entryType} entry)` : ""}.`
+      : "Gate is closed. Waiting for ESP32."
   );
 
-  $("gateStatus")?.classList.toggle("is-open", open);
-  $("gateStatus")?.classList.toggle("is-closed", !open);
+  setText("gateStatusBadge", isOpen ? "OPEN" : "CLOSED");
+
+  $("gateStatusBadge")?.classList.toggle("is-open", isOpen);
+  $("gateStatusBadge")?.classList.toggle("is-closed", !isOpen);
+  $("gateStatusBadge")?.classList.toggle(
+    "live",
+    Boolean(data?.gate)
+  );
 }
 
-function renderAllCityTotals() {
+function renderHero() {
   let available = 0;
-  let reserved = 0;
   let occupied = 0;
 
   for (const city of CITIES) {
-    const parking = cityCache[city]?.parking;
+    if (cityData[city]) {
+      const counts = countsForCity(cityData[city]);
 
-    if (!parking) continue;
-
-    available += Number(parking.available) || 0;
-    reserved += Number(parking.reserved) || 0;
-    occupied += Number(parking.occupied) || 0;
+      available += counts.available;
+      occupied += counts.occupied;
+    }
   }
 
-  setText("availableAll", available);
-  setText("reservedAll", reserved);
-  setText("occupiedAll", occupied);
-  setText("totalAll", 4);
+  setText("heroTotalSlots", SLOT_IDS.length * CITIES.length);
+  setText("heroAvailableSlots", available);
+  setText("heroOccupiedSlots", occupied);
 }
 
-function updateBookingSlotOptions(slots) {
-  const select = $("bookingSlot");
-
-  if (!select) return;
-
-  const previousValue = select.value;
-
-  select.innerHTML = SLOT_IDS.map(slotId => {
-    const status = getSlotStatus(slots[slotId] || {});
-    const disabled = status !== "available";
-
-    return `
-      <option
-        value="${slotId}"
-        ${disabled ? "disabled" : ""}
-      >
-        ${slotId.toUpperCase()} — ${status}
-      </option>
-    `;
-  }).join("");
-
-  if (
-    previousValue &&
-    SLOT_IDS.includes(previousValue) &&
-    getSlotStatus(slots[previousValue] || {}) === "available"
-  ) {
-    select.value = previousValue;
-  }
-}
-
-// ======================================================
-// LOGIN, SIGNUP AND LOGOUT
-// Firebase Authentication handles passwords.
-// Never store passwords in Realtime Database.
-// ======================================================
+/* =========================================================
+   LOGIN, SIGNUP AND AUTHENTICATION
+========================================================= */
 
 function setAuthMode(mode) {
   authMode = mode;
@@ -517,41 +466,151 @@ function setAuthMode(mode) {
 
   setText(
     "authTitle",
-    signup ? "Create your SmartPark account" : "Welcome back"
+    signup ? "Create Your Account" : "Welcome Back"
+  );
+
+  setText(
+    "authSubtitle",
+    signup
+      ? "Create your SmartPark account."
+      : "Login to your SmartPark account."
   );
 
   setText(
     "authSubmitBtn",
-    signup ? "Create account" : "Login"
+    signup ? "Create Account" : "Login"
+  );
+
+  setText(
+    "authSwitchText",
+    signup
+      ? "Already have an account?"
+      : "Don't have an account?"
   );
 
   setText(
     "authSwitchBtn",
-    signup
-      ? "Already have an account? Login"
-      : "New here? Create account"
+    signup ? "Login" : "Create Account"
   );
 
-  if ($("authNameField")) {
-    $("authNameField").hidden = !signup;
-  }
+  $("nameField")?.classList.toggle("hidden", !signup);
+  $("fullName")?.toggleAttribute("required", signup);
 
-  if ($("authName")) {
-    $("authName").required = signup;
-  }
+  $("password")?.setAttribute(
+    "autocomplete",
+    signup ? "new-password" : "current-password"
+  );
 
-  showError("authError", "");
+  clearMessage("authError");
+  clearMessage("authSuccess");
 }
 
-function bindAuthentication() {
-  $("loginBtn")?.addEventListener("click", () => {
-    setAuthMode("login");
-    showModal("authModal");
+function openAuth(mode = "login") {
+  setAuthMode(mode);
+  show("authSection");
+
+  $("authSection")?.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
   });
 
-  $("signupBtn")?.addEventListener("click", () => {
-    setAuthMode("signup");
-    showModal("authModal");
+  $("email")?.focus({ preventScroll: true });
+}
+
+function readableAuthError(error) {
+  const errors = {
+    "auth/email-already-in-use":
+      "This email already has an account. Please log in.",
+
+    "auth/invalid-email":
+      "Enter a valid email address.",
+
+    "auth/weak-password":
+      "Password must contain at least 6 characters.",
+
+    "auth/invalid-credential":
+      "Email or password is incorrect.",
+
+    "auth/user-not-found":
+      "No account was found for this email.",
+
+    "auth/wrong-password":
+      "Email or password is incorrect.",
+
+    "auth/network-request-failed":
+      "Network error. Check your connection.",
+
+    "auth/too-many-requests":
+      "Too many attempts. Wait a little and try again."
+  };
+
+  return errors[error?.code] ||
+    error?.message ||
+    "Authentication failed.";
+}
+
+function bindAuth() {
+  $("loginNavBtn")?.addEventListener("click", () => {
+    openAuth("login");
+  });
+
+  $("signupNavBtn")?.addEventListener("click", () => {
+    openAuth("signup");
+  });
+
+  $("heroSignupBtn")?.addEventListener("click", () => {
+    openAuth("signup");
+  });
+
+  $("closeAuthBtn")?.addEventListener("click", () => {
+    hide("authSection");
+  });
+
+  $("authSwitchBtn")?.addEventListener("click", () => {
+    setAuthMode(authMode === "login" ? "signup" : "login");
+  });
+
+  $("togglePasswordBtn")?.addEventListener("click", () => {
+    const field = $("password");
+    if (!field) return;
+
+    field.type =
+      field.type === "password" ? "text" : "password";
+
+    setText(
+      "togglePasswordBtn",
+      field.type === "password" ? "Show" : "Hide"
+    );
+
+    $("togglePasswordBtn")?.setAttribute(
+      "aria-label",
+      field.type === "password"
+        ? "Show password"
+        : "Hide password"
+    );
+  });
+
+  $("forgotPasswordBtn")?.addEventListener("click", async () => {
+    const email = $("email")?.value.trim();
+
+    if (!email) {
+      return message(
+        "authError",
+        "Enter your email address first.",
+        true
+      );
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+
+      message(
+        "authSuccess",
+        "Password reset email sent. Check your inbox."
+      );
+    } catch (error) {
+      message("authError", readableAuthError(error), true);
+    }
   });
 
   $("logoutBtn")?.addEventListener("click", async () => {
@@ -559,45 +618,45 @@ function bindAuthentication() {
       await signOut(auth);
       toast("Logged out successfully.");
     } catch (error) {
-      toast(error.message, true);
+      toast(readableAuthError(error), true);
     }
-  });
-
-  $("authSwitchBtn")?.addEventListener("click", () => {
-    setAuthMode(authMode === "login" ? "signup" : "login");
   });
 
   $("authForm")?.addEventListener("submit", async event => {
     event.preventDefault();
 
-    const email = $("authEmail")?.value.trim();
-    const password = $("authPassword")?.value || "";
-    const name = $("authName")?.value.trim() || "";
-
+    const email = $("email").value.trim();
+    const password = $("password").value;
+    const name = $("fullName").value.trim();
     const button = $("authSubmitBtn");
 
-    if (button) button.disabled = true;
+    button.disabled = true;
 
-    showError("authError", "");
+    clearMessage("authError");
+    clearMessage("authSuccess");
 
     try {
       if (authMode === "signup") {
-        const result = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
-        if (name) {
-          await updateProfile(result.user, {
-            displayName: name
-          });
+        if (!name) {
+          throw new Error("Enter your full name.");
         }
+
+        const result =
+          await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+
+        await updateProfile(result.user, {
+          displayName: name
+        });
 
         await set(dbRef(`users/${result.user.uid}`), {
           uid: result.user.uid,
           name,
           email,
+          userType: "local",
           createdAt: new Date().toISOString()
         });
 
@@ -612,575 +671,116 @@ function bindAuthentication() {
         toast("Login successful.");
       }
 
-      closeModal("authModal");
-      $("authForm")?.reset();
-
+      hide("authSection");
+      $("authForm").reset();
     } catch (error) {
-      console.error(error);
+      console.error("Authentication error:", error);
 
-      const messages = {
-        "auth/email-already-in-use":
-          "This email already has an account. Please log in.",
-        "auth/invalid-email":
-          "Enter a valid email address.",
-        "auth/weak-password":
-          "Use a password with at least 6 characters.",
-        "auth/invalid-credential":
-          "Email or password is incorrect.",
-        "auth/network-request-failed":
-          "Network error. Check your internet connection."
-      };
-
-      showError(
+      message(
         "authError",
-        messages[error.code] || error.message || "Authentication failed."
+        readableAuthError(error),
+        true
       );
-
     } finally {
-      if (button) button.disabled = false;
+      button.disabled = false;
     }
   });
 }
 
-function updateUserPanel(user) {
-  if ($("loginBtn")) $("loginBtn").hidden = Boolean(user);
-  if ($("signupBtn")) $("signupBtn").hidden = Boolean(user);
-  if ($("logoutBtn")) $("logoutBtn").hidden = !user;
-  if ($("myBookingsBtn")) $("myBookingsBtn").hidden = !user;
+/* =========================================================
+   UPDATE USER HEADER AND ADMIN VISIBILITY
+========================================================= */
+
+function updateUserUI(user) {
+  const loggedIn = Boolean(user);
+
+  $("loginNavBtn")?.classList.toggle("hidden", loggedIn);
+  $("signupNavBtn")?.classList.toggle("hidden", loggedIn);
+  $("accountActions")?.classList.toggle("hidden", !loggedIn);
+  $("welcomePanel")?.classList.toggle("hidden", !loggedIn);
+
+  const displayName =
+    userProfile.name ||
+    user?.displayName ||
+    user?.email ||
+    "User";
+
+  setText("headerUserName", displayName);
+  setText("welcomeUserName", displayName);
+
+  const isAdmin = userProfile.userType === "admin";
 
   setText(
-    "userName",
-    user?.displayName || user?.email || "Guest"
+    "userTypeLabel",
+    isAdmin ? "Administrator" : "SmartPark User"
   );
 
-  setText(
-    "userPanelName",
-    user?.displayName || user?.email || "Guest"
-  );
+  $("adminSection")?.classList.toggle("hidden", !isAdmin);
 
-  if (cityCache[selectedCity]) {
-    renderCity(cityCache[selectedCity]);
+  if (cityData[selectedCity]) {
+    renderCity(cityData[selectedCity]);
+  }
+
+  if (isAdmin) {
+    renderAdminDashboard();
   }
 }
 
-// ======================================================
-// BOOKING
-// Demo tariff: ₹20 per started hour.
-// This is not a real payment.
-// ======================================================
+/* =========================================================
+   BOOKING
+========================================================= */
 
-function setDefaultBookingDates() {
-  const start = $("bookingStart");
-  const end = $("bookingEnd");
-
-  if (!start || !end) return;
-
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-
-  const startTime = now.toISOString().slice(0, 16);
-
-  const finish = new Date(
-    now.getTime() + 2 * 60 * 60 * 1000
-  );
-
-  finish.setMinutes(
-    finish.getMinutes() - finish.getTimezoneOffset()
-  );
-
-  start.value = startTime;
-  end.value = finish.toISOString().slice(0, 16);
-  start.min = startTime;
-  end.min = startTime;
-}
-
-function startBooking(city, slotId) {
+function beginBooking(city, slotId) {
   if (!currentUser) {
-    setAuthMode("login");
-    showModal("authModal");
-    toast("Please log in before booking.", true);
-    return;
+    return openAuth("login");
   }
 
-  selectCity(city);
-
-  if ($("bookingCity")) $("bookingCity").value = city;
-  if ($("bookingSlot")) $("bookingSlot").value = slotId;
-
-  setDefaultBookingDates();
+  if (
+    statusOf(cityData[city]?.slots?.[slotId]) !== "available"
+  ) {
+    return toast(
+      "This slot is no longer available. Choose another slot.",
+      true
+    );
+  }
 
   pendingBooking = { city, slotId };
 
-  showError("bookingError", "");
-  showModal("bookingModal");
-}
+  setText("bookingCityLabel", `City: ${cityLabel(city)}`);
+  setText("bookingSlotLabel", `Slot: ${slotId.toUpperCase()}`);
 
-function bookingAmount(start, end) {
-  const hours = Math.max(
-    1,
-    Math.ceil((end.getTime() - start.getTime()) / 3600000)
-  );
+  $("bookingAmount").value = String(DEMO_AMOUNT);
 
-  return hours * 20;
-}
+  const startInput = $("bookingStart");
+  const endInput = $("bookingEnd");
 
-async function refreshCityCounts(city) {
-  const snapshot = await get(dbRef(`cities/${city}/slots`));
-
-  if (!snapshot.exists()) return;
-
-  const slots = snapshot.val();
-
-  let available = 0;
-  let reserved = 0;
-  let occupied = 0;
-
-  for (const slotId of SLOT_IDS) {
-    const status = getSlotStatus(slots[slotId]);
-
-    if (status === "available") available++;
-    else if (status === "reserved") reserved++;
-    else if (status === "occupied") occupied++;
-  }
-
-  await update(dbRef(`cities/${city}/parking`), {
-    totalSlots: 2,
-    available,
-    reserved,
-    occupied,
-    parkingFull: available === 0
-  });
-}
-
-function bindBooking() {
-  $("bookingForm")?.addEventListener("submit", async event => {
-    event.preventDefault();
-
-    if (!currentUser) {
-      toast("Please log in first.", true);
-      return;
-    }
-
-    const city = $("bookingCity")?.value || selectedCity;
-    const slotId = $("bookingSlot")?.value;
-    const startRaw = $("bookingStart")?.value;
-    const endRaw = $("bookingEnd")?.value;
-
-    const start = new Date(startRaw);
-    const end = new Date(endRaw);
-
-    if (!CITIES.includes(city) || !SLOT_IDS.includes(slotId)) {
-      showError("bookingError", "Select a valid city and slot.");
-      return;
-    }
-
-    if (
-      !startRaw ||
-      !endRaw ||
-      Number.isNaN(start.getTime()) ||
-      Number.isNaN(end.getTime()) ||
-      start < new Date(Date.now() - 60000) ||
-      end <= start
-    ) {
-      showError(
-        "bookingError",
-        "Choose a valid start time and an end time after it."
-      );
-      return;
-    }
-
-    const button =
-      $("bookingSubmitBtn") ||
-      $("bookingForm").querySelector('[type="submit"]');
-
-    if (button) button.disabled = true;
-
-    try {
-      const slotRef = dbRef(`cities/${city}/slots/${slotId}`);
-
-      const transaction = await runTransaction(
-        slotRef,
-        slot => {
-          if (!slot || getSlotStatus(slot) !== "available") {
-            return;
-          }
-
-          return {
-            ...slot,
-            status: "reserved",
-            bookingId: "pending",
-            bookedBy: currentUser.uid,
-            bookingTime: start.toISOString(),
-            expiryTime: end.toISOString()
-          };
-        }
-      );
-
-      if (!transaction.committed) {
-        throw new Error(
-          "This slot is unavailable. Please choose another."
-        );
-      }
-
-      const bookingRef = push(dbRef("bookings"));
-      const bookingId = bookingRef.key;
-      const amount = bookingAmount(start, end);
-
-      const booking = {
-        bookingId,
-        userId: currentUser.uid,
-        userEmail: currentUser.email || "",
-        userName: currentUser.displayName || "",
-        city,
-        slotId,
-        bookingTime: start.toISOString(),
-        expiryTime: end.toISOString(),
-        createdAt: new Date().toISOString(),
-        status: "awaiting_payment",
-        amount,
-        currency: "INR",
-        paymentStatus: "pending"
-      };
-
-      await set(bookingRef, booking);
-
-      await update(slotRef, {
-        bookingId
-      });
-
-      pendingBooking = booking;
-
-      await refreshCityCounts(city);
-
-      closeModal("bookingModal");
-      openPayment(booking);
-
-    } catch (error) {
-      console.error(error);
-
-      showError(
-        "bookingError",
-        error.message || "Booking failed. Please try again."
-      );
-
-      await refreshCityCounts(city).catch(console.error);
-
-    } finally {
-      if (button) button.disabled = false;
-    }
-  });
-
-  $("myBookingsBtn")?.addEventListener("click", () => {
-    showModal("bookingsModal");
-    loadMyBookings();
-  });
-}
-
-// ======================================================
-// DEMO PAYMENT
-// No payment gateway. No real money is charged.
-// ======================================================
-
-function openPayment(booking) {
-  setText(
-    "paymentBookingSummary",
-    `${cityName(booking.city)} · ${booking.slotId.toUpperCase()} · ${formatMoney(booking.amount)}`
-  );
-
-  setText("paymentAmount", formatMoney(booking.amount));
-
-  setText(
-    "paymentNotice",
-    "Demo payment only. No real money will be charged."
-  );
-
-  if ($("paymentMethod")) {
-    $("paymentMethod").value = "demo";
-  }
-
-  showError("paymentError", "");
-  showModal("paymentModal");
-}
-
-function bindPayment() {
-  $("paymentForm")?.addEventListener("submit", async event => {
-    event.preventDefault();
-
-    if (!currentUser || !pendingBooking?.bookingId) {
-      showError(
-        "paymentError",
-        "No pending booking found. Please book a slot again."
-      );
-      return;
-    }
-
-    const button =
-      $("demoPaymentConfirm") ||
-      $("paymentForm").querySelector('[type="submit"]');
-
-    if (button) button.disabled = true;
-
-    const booking = pendingBooking;
-    const now = new Date().toISOString();
-
-    try {
-      // SIMULATED payment record. No money is transferred.
-      const paymentRef = push(dbRef("payments"));
-      const paymentId = paymentRef.key;
-
-      await set(paymentRef, {
-        paymentId,
-        bookingId: booking.bookingId,
-        userId: currentUser.uid,
-        amount: booking.amount,
-        currency: "INR",
-        status: "success",
-        paymentMethod: "demo",
-        createdAt: now,
-        paidAt: now,
-        note: "College project demo; no real money charged."
-      });
-
-      await update(dbRef(`bookings/${booking.bookingId}`), {
-        status: "confirmed",
-        paymentStatus: "success",
-        paymentId,
-        paidAt: now
-      });
-
-      await update(
-        dbRef(`cities/${booking.city}/slots/${booking.slotId}`),
-        {
-          status: "reserved",
-          bookingId: booking.bookingId,
-          bookedBy: currentUser.uid,
-          bookingTime: booking.bookingTime,
-          expiryTime: booking.expiryTime
-        }
-      );
-
-      await refreshCityCounts(booking.city);
-
-      closeModal("paymentModal");
-
-      toast(
-        "Demo payment successful. Reservation confirmed."
-      );
-
-      pendingBooking = null;
-      loadMyBookings();
-
-    } catch (error) {
-      console.error(error);
-
-      showError(
-        "paymentError",
-        "Could not save demo payment. Check Firebase rules."
-      );
-
-    } finally {
-      if (button) button.disabled = false;
-    }
-  });
-}
-
-// ======================================================
-// MY BOOKINGS
-// ======================================================
-
-async function loadMyBookings() {
-  const container = $("myBookingsList");
-
-  if (!container || !currentUser) return;
-
-  container.textContent = "Loading bookings…";
-
-  try {
-    const snapshot = await get(dbRef("bookings"));
-    const allBookings = snapshot.val() || {};
-
-    const bookings = Object.values(allBookings)
-      .filter(booking => booking.userId === currentUser.uid)
-      .sort((a, b) =>
-        String(b.createdAt || "").localeCompare(
-          String(a.createdAt || "")
-        )
-      );
-
-    if (!bookings.length) {
-      container.innerHTML = "<p>You have no bookings yet.</p>";
-      return;
-    }
-
-    container.innerHTML = bookings.map(booking => {
-      const expiry = new Date(booking.expiryTime).getTime();
-      const active =
-        booking.status === "confirmed" &&
-        Number.isFinite(expiry) &&
-        expiry > Date.now();
-
-      return `
-        <article class="booking-item">
-          <div>
-            <strong>
-              ${cityName(booking.city)} ·
-              ${escapeHTML(String(booking.slotId || "").toUpperCase())}
-            </strong>
-
-            <p>Start: ${escapeHTML(formatDate(booking.bookingTime))}</p>
-            <p>End: ${escapeHTML(formatDate(booking.expiryTime))}</p>
-            <p>Status: ${escapeHTML(booking.status || "unknown")}</p>
-            <p>Payment: ${escapeHTML(booking.paymentStatus || "pending")}</p>
-            <p>Amount: ${formatMoney(booking.amount)}</p>
-          </div>
-
-          <div class="booking-actions">
-            ${active ? `
-              <button
-                type="button"
-                class="btn btn-primary"
-                data-entry-request="${escapeHTML(booking.bookingId)}"
-              >
-                Request Entry
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-secondary"
-                data-cancel-booking="${escapeHTML(booking.bookingId)}"
-              >
-                Cancel
-              </button>
-            ` : ""}
-          </div>
-        </article>
-      `;
-    }).join("");
-
-    container.querySelectorAll("[data-entry-request]").forEach(button => {
-      button.addEventListener("click", () => {
-        requestReservedEntry(button.dataset.entryRequest);
-      });
-    });
-
-    container.querySelectorAll("[data-cancel-booking]").forEach(button => {
-      button.addEventListener("click", () => {
-        cancelBooking(button.dataset.cancelBooking);
-      });
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    container.innerHTML =
-      "<p>Could not load bookings. Check Firebase rules.</p>";
-  }
-}
-
-// ======================================================
-// RESERVED ENTRY REQUEST
-// Website sends a request; it does not directly open the gate.
-// ESP32 must validate the booking before opening the servo.
-// ======================================================
-
-async function requestReservedEntry(bookingId) {
-  if (!currentUser) {
-    toast("Please log in first.", true);
-    return;
-  }
-
-  try {
-    const snapshot = await get(dbRef(`bookings/${bookingId}`));
-    const booking = snapshot.val();
-
-    if (!booking || booking.userId !== currentUser.uid) {
-      throw new Error("Booking not found for this account.");
-    }
-
-    if (
-      booking.status !== "confirmed" ||
-      booking.paymentStatus !== "success"
-    ) {
-      throw new Error("Your booking is not confirmed.");
-    }
-
-    if (new Date(booking.expiryTime).getTime() < Date.now()) {
-      throw new Error("Your reservation has expired.");
-    }
-
-    const slotSnapshot = await get(
-      dbRef(`cities/${booking.city}/slots/${booking.slotId}`)
+  const localDateTime = date => {
+    const adjusted = new Date(
+      date.getTime() - date.getTimezoneOffset() * 60000
     );
 
-    const slot = slotSnapshot.val();
+    return adjusted.toISOString().slice(0, 16);
+  };
 
-    if (
-      !slot ||
-      slot.bookingId !== bookingId ||
-      slot.bookedBy !== currentUser.uid
-    ) {
-      throw new Error("The reserved slot could not be verified.");
-    }
+  const start = new Date(Date.now() + 5 * 60000);
 
-    const requestRef = push(dbRef("gateRequests"));
-    const requestId = requestRef.key;
+  startInput.min = localDateTime(new Date());
+  startInput.value = localDateTime(start);
 
-    await set(requestRef, {
-      requestId,
-      bookingId,
-      userId: currentUser.uid,
-      city: booking.city,
-      slotId: booking.slotId,
-      type: "reserved",
-      status: "pending",
-      createdAt: new Date().toISOString(),
-      expiresAt: booking.expiryTime
-    });
+  endInput.min = localDateTime(start);
 
-    await update(dbRef(`cities/${booking.city}/gate`), {
-      entryAllowed: true,
-      entryType: "reserved",
-      requestId
-    });
+  endInput.value = localDateTime(
+    new Date(start.getTime() + 2 * 60 * 60000)
+  );
 
-    toast(
-      "Entry request sent. Waiting for ESP32 verification."
-    );
-
-  } catch (error) {
-    console.error(error);
-    toast(error.message || "Entry request failed.", true);
-  }
+  clearMessage("bookingMessage");
+  openModal("bookingModal");
 }
 
-// ======================================================
-// CANCEL RESERVATION
-// ======================================================
-
-async function cancelBooking(bookingId) {
-  if (!currentUser) return;
-
-  if (!confirm("Cancel this reservation?")) return;
+async function releaseUnpaidBooking(booking) {
+  if (!booking?.bookingId || !currentUser) return;
 
   try {
-    const snapshot = await get(dbRef(`bookings/${bookingId}`));
-    const booking = snapshot.val();
-
-    if (!booking || booking.userId !== currentUser.uid) {
-      throw new Error("Booking not found.");
-    }
-
-    if (
-      !["confirmed", "awaiting_payment"].includes(booking.status)
-    ) {
-      throw new Error("This booking cannot be cancelled.");
-    }
-
-    await update(dbRef(`bookings/${bookingId}`), {
-      status: "cancelled",
-      cancelledAt: new Date().toISOString()
-    });
-
     const slotRef = dbRef(
       `cities/${booking.city}/slots/${booking.slotId}`
     );
@@ -1188,190 +788,846 @@ async function cancelBooking(bookingId) {
     const slotSnapshot = await get(slotRef);
     const slot = slotSnapshot.val();
 
-    // Avoid clearing a slot if it no longer belongs to this booking.
-    if (slot && slot.bookingId === bookingId) {
+    if (
+      slot?.bookingId === booking.bookingId &&
+      slot?.bookedBy === currentUser.uid &&
+      slot?.sensorOccupied !== true
+    ) {
       await update(slotRef, {
-        status: slot.sensorOccupied ? "occupied" : "available",
-        bookingId: null,
+        status: "available",
         bookedBy: null,
+        bookingId: null,
         bookingTime: null,
         expiryTime: null
       });
     }
 
-    await refreshCityCounts(booking.city);
+    const bookingRef = dbRef(
+      `bookings/${booking.bookingId}`
+    );
 
-    toast("Reservation cancelled.");
-    loadMyBookings();
+    const bookingSnapshot = await get(bookingRef);
 
-  } catch (error) {
-    console.error(error);
-    toast(error.message || "Cancellation failed.", true);
-  }
-}
-
-// ======================================================
-// ENTRY CONTROLS
-// Local gate opening is controlled by the ESP32 sensor logic.
-// Sensor threshold: 10 cm.
-// ======================================================
-
-function bindEntryControls() {
-  $("localEntryBtn")?.addEventListener("click", () => {
-    const parking = cityCache[selectedCity]?.parking || {};
-
-    if (Number(parking.available) < 1) {
-      toast(
-        `${cityName(selectedCity)} parking is full. Gate must remain closed.`,
-        true
-      );
-      return;
+    if (
+      bookingSnapshot.exists() &&
+      bookingSnapshot.val().userId === currentUser.uid &&
+      bookingSnapshot.val().status === "awaiting_payment"
+    ) {
+      await update(bookingRef, {
+        status: "cancelled",
+        paymentStatus: "cancelled"
+      });
     }
+  } catch (error) {
+    console.error("Could not release unpaid booking:", error);
 
     toast(
-      "Local entry uses the ESP32 ultrasonic sensor. The gate should open when a car is detected within 10 cm and a slot is available."
-    );
-  });
-
-  $("reservedEntryBtn")?.addEventListener("click", () => {
-    if (!currentUser) {
-      setAuthMode("login");
-      showModal("authModal");
-      return;
-    }
-
-    showModal("bookingsModal");
-    loadMyBookings();
-  });
-}
-
-// ======================================================
-// MODAL CLOSE BUTTONS AND MOBILE NAVIGATION
-// ======================================================
-
-function bindCloseButtons() {
-  document.querySelectorAll("[data-close-modal]").forEach(button => {
-    button.addEventListener("click", () => {
-      closeModal(button.dataset.closeModal);
-    });
-  });
-
-  [
-    "authModal",
-    "bookingModal",
-    "paymentModal",
-    "bookingsModal"
-  ].forEach(id => {
-    const dialog = $(id);
-
-    dialog?.addEventListener("click", event => {
-      if (event.target === dialog) closeModal(id);
-    });
-  });
-
-  $("mobileMenuBtn")?.addEventListener("click", () => {
-    document.querySelector(".site-nav")?.classList.toggle("is-open");
-  });
-
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener("click", () => {
-      document.querySelector(".site-nav")?.classList.remove("is-open");
-    });
-  });
-}
-
-// ======================================================
-// AUTH STATE AND CONNECTION STATUS
-// ======================================================
-
-function bindConnectionStatus() {
-  onValue(ref(db, ".info/connected"), snapshot => {
-    const connected = snapshot.val() === true;
-
-    setText(
-      "connectionStatus",
-      connected ? "Firebase live" : "Connecting to Firebase…"
-    );
-  });
-}
-
-function bindAuthState() {
-  onAuthStateChanged(auth, async user => {
-    currentUser = user;
-
-    updateUserPanel(user);
-
-    if (user) {
-      try {
-        const userRef = dbRef(`users/${user.uid}`);
-        const snapshot = await get(userRef);
-
-        if (!snapshot.exists()) {
-          await set(userRef, {
-            uid: user.uid,
-            name: user.displayName || "",
-            email: user.email || "",
-            createdAt: new Date().toISOString()
-          });
-        }
-      } catch (error) {
-        console.error("User profile record could not be saved:", error);
-      }
-    }
-  });
-}
-
-// ======================================================
-// START SMARTPARK
-// ======================================================
-
-async function startSmartPark() {
-  bindCityButtons();
-  bindAuthentication();
-  bindBooking();
-  bindPayment();
-  bindEntryControls();
-  bindCloseButtons();
-
-  setAuthMode("login");
-
-  if (!initializeFirebase()) return;
-
-  bindConnectionStatus();
-  bindAuthState();
-
-  try {
-    await initializeParkingData();
-
-    for (const city of CITIES) {
-      const snapshot = await get(dbRef(`cities/${city}`));
-
-      if (snapshot.exists()) {
-        cityCache[city] = snapshot.val();
-      }
-    }
-
-    renderAllCityTotals();
-    selectCity("surat");
-
-  } catch (error) {
-    console.error("SmartPark Firebase error:", error);
-
-    setText("connectionStatus", "Firebase permission error");
-
-    toast(
-      "Firebase data could not be loaded. Check your web config and Realtime Database rules.",
+      "The pending booking could not be fully cancelled. Check Firebase Rules.",
       true
     );
   }
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener(
-    "DOMContentLoaded",
-    startSmartPark,
-    { once: true }
+function bindBooking() {
+  $("continuePaymentBtn")?.addEventListener(
+    "click",
+    async () => {
+      if (
+        !currentUser ||
+        !pendingBooking ||
+        pendingBooking.bookingId
+      ) {
+        if (!currentUser) {
+          message(
+            "bookingMessage",
+            "Log in and select a slot first.",
+            true
+          );
+        }
+
+        return;
+      }
+
+      const startValue = $("bookingStart").value;
+      const endValue = $("bookingEnd").value;
+
+      const start = new Date(startValue);
+      const end = new Date(endValue);
+
+      if (
+        !startValue ||
+        !endValue ||
+        Number.isNaN(start.getTime()) ||
+        Number.isNaN(end.getTime()) ||
+        start < new Date(Date.now() - 60000) ||
+        end <= start
+      ) {
+        return message(
+          "bookingMessage",
+          "Choose a valid start time and an end time after it.",
+          true
+        );
+      }
+
+      const button = $("continuePaymentBtn");
+      button.disabled = true;
+
+      let slotRef = null;
+      let reservationCreated = false;
+
+      try {
+        const { city, slotId } = pendingBooking;
+
+        slotRef = dbRef(`cities/${city}/slots/${slotId}`);
+
+        const transaction = await runTransaction(
+          slotRef,
+          slot => {
+            if (!slot || statusOf(slot) !== "available") {
+              return;
+            }
+
+            return {
+              ...slot,
+              status: "reserved",
+              sensorOccupied: slot.sensorOccupied === true,
+              bookedBy: currentUser.uid,
+              bookingId: "pending",
+              bookingTime: start.toISOString(),
+              expiryTime: end.toISOString()
+            };
+          }
+        );
+
+        if (!transaction.committed) {
+          throw new Error(
+            "This slot is no longer available. Choose another slot."
+          );
+        }
+
+        reservationCreated = true;
+
+        const bookingRef = push(dbRef("bookings"));
+        const bookingId = bookingRef.key;
+
+        const booking = {
+          bookingId,
+          userId: currentUser.uid,
+          userEmail: currentUser.email || "",
+          userName:
+            currentUser.displayName ||
+            userProfile.name ||
+            "",
+          city,
+          slotId,
+          bookingTime: start.toISOString(),
+          expiryTime: end.toISOString(),
+          createdAt: new Date().toISOString(),
+          status: "awaiting_payment",
+          amount: DEMO_AMOUNT,
+          currency: "INR",
+          paymentStatus: "pending"
+        };
+
+        await set(bookingRef, booking);
+        await update(slotRef, { bookingId });
+
+        pendingBooking = booking;
+
+        closeModal("bookingModal");
+
+        setText(
+          "paymentSummary",
+          `${cityLabel(city)} — ${slotId.toUpperCase()} — ` +
+            `${money(DEMO_AMOUNT)}. Demo payment only; no money will be charged.`
+        );
+
+        clearMessage("paymentMessage");
+        openModal("paymentModal");
+
+        renderBookings();
+      } catch (error) {
+        console.error("Booking creation failed:", error);
+
+        message(
+          "bookingMessage",
+          error.message || "Could not create booking.",
+          true
+        );
+
+        if (reservationCreated && slotRef) {
+          try {
+            const snapshot = await get(slotRef);
+            const slot = snapshot.val();
+
+            if (
+              slot?.bookedBy === currentUser.uid &&
+              slot?.bookingId === "pending"
+            ) {
+              await update(slotRef, {
+                status: "available",
+                bookedBy: null,
+                bookingId: null,
+                bookingTime: null,
+                expiryTime: null
+              });
+            }
+          } catch (cleanupError) {
+            console.error(
+              "Reservation cleanup failed:",
+              cleanupError
+            );
+          }
+        }
+      } finally {
+        button.disabled = false;
+      }
+    }
   );
-} else {
-  startSmartPark();
 }
+
+/* =========================================================
+   DEMO PAYMENT
+========================================================= */
+
+function bindPayment() {
+  $("confirmDemoPaymentBtn")?.addEventListener(
+    "click",
+    async () => {
+      const booking = pendingBooking;
+
+      if (
+        !currentUser ||
+        !booking?.bookingId ||
+        booking.status !== "awaiting_payment"
+      ) {
+        return message(
+          "paymentMessage",
+          "No pending booking found. Close this window and try booking again.",
+          true
+        );
+      }
+
+      const button = $("confirmDemoPaymentBtn");
+      button.disabled = true;
+
+      try {
+        const paymentRef = push(dbRef("payments"));
+        const paymentId = paymentRef.key;
+        const paidAt = new Date().toISOString();
+
+        await set(paymentRef, {
+          paymentId,
+          bookingId: booking.bookingId,
+          userId: currentUser.uid,
+          userEmail: currentUser.email || "",
+          city: booking.city,
+          slotId: booking.slotId,
+          amount: DEMO_AMOUNT,
+          currency: "INR",
+          paymentMethod: "DEMO",
+          status: "SUCCESS_DEMO",
+          paidAt
+        });
+
+        await update(
+          dbRef(`bookings/${booking.bookingId}`),
+          {
+            status: "confirmed",
+            paymentStatus: "SUCCESS_DEMO",
+            paymentId,
+            paidAt
+          }
+        );
+
+        pendingBooking.status = "confirmed";
+        pendingBooking.paymentStatus = "SUCCESS_DEMO";
+
+        closeModal("paymentModal");
+        pendingBooking = null;
+
+        toast(
+          "Demo payment successful. No real money was charged."
+        );
+
+        await renderBookings();
+        await renderPayments();
+      } catch (error) {
+        console.error("Demo payment update failed:", error);
+
+        message(
+          "paymentMessage",
+          error.message ||
+            "Demo payment failed. No real payment was attempted.",
+          true
+        );
+      } finally {
+        button.disabled = false;
+      }
+    }
+  );
+}
+
+/* =========================================================
+   USER BOOKING HISTORY
+========================================================= */
+
+async function renderBookings() {
+  const box = $("myBookingsContainer");
+  if (!box) return;
+
+  if (!currentUser) {
+    box.innerHTML = `
+      <div class="empty-state">
+        <p>Login to view your bookings.</p>
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const bookingsQuery = query(
+      dbRef("bookings"),
+      orderByChild("userId"),
+      equalTo(currentUser.uid)
+    );
+
+    const snapshot = await get(bookingsQuery);
+
+    const records = Object.values(
+      snapshot.val() || {}
+    ).sort((a, b) =>
+      String(b.createdAt || "").localeCompare(
+        String(a.createdAt || "")
+      )
+    );
+
+    if (!records.length) {
+      box.innerHTML = `
+        <div class="empty-state">
+          <p>You have no bookings yet.</p>
+        </div>
+      `;
+      return;
+    }
+
+    box.innerHTML = records.map(booking => {
+      const expired =
+        booking.expiryTime &&
+        new Date(booking.expiryTime).getTime() < Date.now();
+
+      const statusText =
+        expired && booking.status === "confirmed"
+          ? "expired"
+          : booking.status || "unknown";
+
+      const canRequestGate =
+        booking.status === "confirmed" && !expired;
+
+      return `
+        <article class="booking-card">
+          <h4>
+            ${escapeHTML(cityLabel(booking.city))}
+            — ${escapeHTML(String(booking.slotId || "").toUpperCase())}
+          </h4>
+
+          <p>Status: ${escapeHTML(statusText)}</p>
+          <p>Start: ${escapeHTML(dateLabel(booking.bookingTime))}</p>
+          <p>End: ${escapeHTML(dateLabel(booking.expiryTime))}</p>
+          <p>Amount: ${escapeHTML(money(booking.amount))}</p>
+          <p>Payment: ${escapeHTML(booking.paymentStatus || "pending")}</p>
+
+          ${
+            canRequestGate
+              ? `<button
+                   type="button"
+                   class="btn btn-outline request-gate-btn"
+                   data-booking-id="${escapeHTML(booking.bookingId)}"
+                   data-booking-city="${escapeHTML(booking.city)}"
+                 >
+                   Request reserved entry
+                 </button>`
+              : ""
+          }
+        </article>
+      `;
+    }).join("");
+
+    box.querySelectorAll(".request-gate-btn").forEach(button => {
+      button.addEventListener("click", () => {
+        const booking = records.find(
+          item => item.bookingId === button.dataset.bookingId
+        );
+
+        if (booking) {
+          requestReservedEntry(booking, button);
+        }
+      });
+    });
+  } catch (error) {
+    console.error("Could not load bookings:", error);
+
+    box.innerHTML = `
+      <div class="empty-state">
+        <p>
+          Could not load bookings. Confirm your Firebase Database Rules.
+        </p>
+      </div>
+    `;
+  }
+}
+
+/* =========================================================
+   RESERVED ENTRY REQUEST FOR ESP32
+========================================================= */
+
+async function requestReservedEntry(booking, button) {
+  if (
+    !currentUser ||
+    booking.userId !== currentUser.uid ||
+    booking.status !== "confirmed"
+  ) {
+    return toast(
+      "Only your confirmed booking can request entry.",
+      true
+    );
+  }
+
+  if (
+    new Date(booking.expiryTime).getTime() <= Date.now()
+  ) {
+    return toast("This booking has expired.", true);
+  }
+
+  button.disabled = true;
+
+  try {
+    const requestRef = dbRef(`gateRequests/${booking.city}`);
+    const existing = await get(requestRef);
+
+    if (
+      existing.exists() &&
+      existing.val()?.userId !== currentUser.uid
+    ) {
+      throw new Error(
+        "Another entry request is being processed. Wait a moment and retry."
+      );
+    }
+
+    const requestId = push(dbRef("requestIds")).key;
+
+    await set(requestRef, {
+      requestId,
+      userId: currentUser.uid,
+      bookingId: booking.bookingId,
+      city: booking.city,
+      entryType: "reserved",
+      requestedAt: new Date().toISOString()
+    });
+
+    toast(
+      "Entry request sent to the ESP32. The gate will open only if the booking is valid and the ESP32 is online."
+    );
+  } catch (error) {
+    console.error("Gate request failed:", error);
+
+    toast(
+      error.message ||
+        "Could not send gate request. Check Firebase Rules.",
+      true
+    );
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* =========================================================
+   PAYMENT HISTORY
+========================================================= */
+
+async function renderPayments() {
+  const box = $("myPaymentsContainer");
+  if (!box) return;
+
+  if (!currentUser) {
+    box.innerHTML = `
+      <div class="empty-state">
+        <p>Login to view your payment history.</p>
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const paymentsQuery = query(
+      dbRef("payments"),
+      orderByChild("userId"),
+      equalTo(currentUser.uid)
+    );
+
+    const snapshot = await get(paymentsQuery);
+
+    const records = Object.values(
+      snapshot.val() || {}
+    ).sort((a, b) =>
+      String(b.paidAt || "").localeCompare(
+        String(a.paidAt || "")
+      )
+    );
+
+    if (!records.length) {
+      box.innerHTML = `
+        <div class="empty-state">
+          <p>No payment records yet.</p>
+        </div>
+      `;
+      return;
+    }
+
+    box.innerHTML = records.map(payment => `
+      <article class="payment-card">
+        <h4>
+          ${escapeHTML(cityLabel(payment.city))}
+          — ${escapeHTML(String(payment.slotId || "").toUpperCase())}
+        </h4>
+
+        <p>Amount: ${escapeHTML(money(payment.amount))}</p>
+        <p>Status: ${escapeHTML(payment.status || "unknown")}</p>
+        <p>Date: ${escapeHTML(dateLabel(payment.paidAt))}</p>
+        <p>Payment ID: ${escapeHTML(payment.paymentId || "")}</p>
+      </article>
+    `).join("");
+  } catch (error) {
+    console.error("Could not load payments:", error);
+
+    box.innerHTML = `
+      <div class="empty-state">
+        <p>
+          Could not load payments. Confirm your Firebase Database Rules.
+        </p>
+      </div>
+    `;
+  }
+}
+
+/* =========================================================
+   USER PROFILE
+========================================================= */
+
+function bindProfile() {
+  $("profileBtn")?.addEventListener("click", () => {
+    if (!currentUser) {
+      return openAuth("login");
+    }
+
+    $("profileName").value =
+      userProfile.name || currentUser.displayName || "";
+
+    $("profileEmail").value = currentUser.email || "";
+
+    $("profileUserType").value =
+      userProfile.userType || "local";
+
+    clearMessage("profileMessage");
+    show("profileSection");
+
+    $("profileSection")?.scrollIntoView({
+      behavior: "smooth"
+    });
+  });
+
+  $("closeProfileBtn")?.addEventListener("click", () => {
+    hide("profileSection");
+  });
+
+  $("saveProfileBtn")?.addEventListener("click", async () => {
+    if (!currentUser) return;
+
+    const name = $("profileName").value.trim();
+
+    if (!name) {
+      return message(
+        "profileMessage",
+        "Enter your name.",
+        true
+      );
+    }
+
+    const button = $("saveProfileBtn");
+    button.disabled = true;
+
+    try {
+      await updateProfile(currentUser, {
+        displayName: name
+      });
+
+      await update(
+        dbRef(`users/${currentUser.uid}`),
+        { name }
+      );
+
+      userProfile.name = name;
+
+      setText("headerUserName", name);
+      setText("welcomeUserName", name);
+
+      message(
+        "profileMessage",
+        "Profile updated successfully."
+      );
+    } catch (error) {
+      message(
+        "profileMessage",
+        error.message || "Could not update profile.",
+        true
+      );
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
+/* =========================================================
+   ADMIN DASHBOARD
+   Admin access must be configured securely in Firebase.
+========================================================= */
+
+async function renderAdminDashboard() {
+  if (
+    userProfile.userType !== "admin" ||
+    !currentUser
+  ) {
+    return;
+  }
+
+  try {
+    const [
+      usersSnapshot,
+      bookingsSnapshot,
+      paymentsSnapshot
+    ] = await Promise.all([
+      get(dbRef("users")),
+      get(dbRef("bookings")),
+      get(dbRef("payments"))
+    ]);
+
+    const users = Object.values(usersSnapshot.val() || {});
+    const bookings = Object.values(bookingsSnapshot.val() || {});
+    const payments = Object.values(paymentsSnapshot.val() || {});
+
+    setText("adminUserCount", users.length);
+    setText("adminBookingCount", bookings.length);
+    setText("adminPaymentCount", payments.length);
+
+    const bookingsBox = $("adminBookingsContainer");
+    const paymentsBox = $("adminPaymentsContainer");
+
+    if (bookingsBox) {
+      bookingsBox.innerHTML = bookings.length
+        ? `
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Booking</th>
+                <th>User</th>
+                <th>City / Slot</th>
+                <th>Status</th>
+                <th>Payment</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${bookings.map(b => `
+                <tr>
+                  <td>${escapeHTML(b.bookingId || "")}</td>
+                  <td>${escapeHTML(b.userEmail || b.userId || "")}</td>
+                  <td>
+                    ${escapeHTML(cityLabel(b.city))}
+                    / ${escapeHTML(b.slotId || "")}
+                  </td>
+                  <td>${escapeHTML(b.status || "")}</td>
+                  <td>${escapeHTML(b.paymentStatus || "")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `
+        : "No bookings yet.";
+    }
+
+    if (paymentsBox) {
+      paymentsBox.innerHTML = payments.length
+        ? `
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Payment</th>
+                <th>User</th>
+                <th>City / Slot</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${payments.map(p => `
+                <tr>
+                  <td>${escapeHTML(p.paymentId || "")}</td>
+                  <td>${escapeHTML(p.userEmail || p.userId || "")}</td>
+                  <td>
+                    ${escapeHTML(cityLabel(p.city))}
+                    / ${escapeHTML(p.slotId || "")}
+                  </td>
+                  <td>${escapeHTML(money(p.amount))}</td>
+                  <td>${escapeHTML(p.status || "")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `
+        : "No payment records yet.";
+    }
+
+    clearMessage("adminMessage");
+  } catch (error) {
+    console.error("Admin dashboard error:", error);
+
+    message(
+      "adminMessage",
+      "Admin access was not granted by Firebase Rules. Check the admin setup instructions.",
+      true
+    );
+  }
+}
+
+/* =========================================================
+   CLOSE MODALS AND PAGE CONTROLS
+========================================================= */
+
+async function cancelPendingPaymentIfNeeded() {
+  const booking = pendingBooking;
+
+  if (
+    booking?.bookingId &&
+    booking.status === "awaiting_payment"
+  ) {
+    await releaseUnpaidBooking(booking);
+    pendingBooking = null;
+  } else if (booking && !booking.bookingId) {
+    pendingBooking = null;
+  }
+}
+
+function bindPageControls() {
+  $("heroParkingBtn")?.addEventListener("click", () => {
+    $("parkingSection")?.scrollIntoView({
+      behavior: "smooth"
+    });
+  });
+
+  $("refreshBookingsBtn")?.addEventListener("click", () => {
+    renderBookings();
+    renderPayments();
+  });
+
+  document.querySelectorAll("[data-close-modal]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const modalId = button.dataset.closeModal;
+
+      if (modalId === "paymentModal") {
+        await cancelPendingPaymentIfNeeded();
+      }
+
+      if (
+        modalId === "bookingModal" &&
+        pendingBooking &&
+        !pendingBooking.bookingId
+      ) {
+        pendingBooking = null;
+      }
+
+      closeModal(modalId);
+    });
+  });
+
+  document.querySelectorAll("[data-city]").forEach(button => {
+    button.addEventListener("click", () => {
+      chooseCity(button.dataset.city);
+    });
+  });
+
+  setText("currentYear", new Date().getFullYear());
+}
+
+/* =========================================================
+   AUTHENTICATION STATE
+========================================================= */
+
+function listenAuth() {
+  onAuthStateChanged(auth, async user => {
+    currentUser = user;
+    userProfile = {};
+
+    if (user) {
+      try {
+        const profileSnapshot = await get(
+          dbRef(`users/${user.uid}`)
+        );
+
+        if (profileSnapshot.exists()) {
+          userProfile = profileSnapshot.val() || {};
+        } else {
+          userProfile = {
+            uid: user.uid,
+            name: user.displayName || "",
+            email: user.email || "",
+            userType: "local"
+          };
+
+          await set(
+            dbRef(`users/${user.uid}`),
+            {
+              ...userProfile,
+              createdAt: new Date().toISOString()
+            }
+          );
+        }
+      } catch (error) {
+        console.error("Profile load failed:", error);
+
+        userProfile = {
+          name: user.displayName || "",
+          email: user.email || "",
+          userType: "local"
+        };
+
+        toast(
+          "Logged in, but profile data could not be read. Check Firebase Rules.",
+          true
+        );
+      }
+    }
+
+    updateUserUI(user);
+
+    await renderBookings();
+    await renderPayments();
+  });
+}
+
+/* =========================================================
+   START SMARTPARK
+========================================================= */
+
+function start() {
+  bindPageControls();
+  bindAuth();
+  bindProfile();
+  bindBooking();
+  bindPayment();
+
+  startCityListeners();
+  chooseCity("surat");
+
+  listenAuth();
+}
+
+start();
