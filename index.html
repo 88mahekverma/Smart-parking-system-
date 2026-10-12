@@ -1,199 +1,621 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#071521">
-  <meta name="description" content="SMARTPARK — live parking availability, reservations, and smart gate entry for Surat and Navsari.">
-  <title>SMARTPARK | Smart Parking, Made Simple</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#edf5ff">
+
+  <title>SmartPark | Smart Parking System</title>
+
+  <meta
+    name="description"
+    content="SmartPark - Smart parking reservations and live parking availability in Surat and Navsari."
+  >
+
   <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase SDK -->
   <script type="module" src="script.js"></script>
 </head>
+
 <body>
-  <div class="site-shell">
-    <header class="site-header">
-      <a class="brand" href="#home" aria-label="SMARTPARK home">
-        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
-        <span>SMART<span class="brand-accent">PARK</span><small>SMART CITY PARKING</small></span>
-      </a>
-      <nav class="main-nav" aria-label="Main navigation">
-        <a href="#parking">Find parking</a>
-        <a href="#how-it-works">How it works</a>
-        <a href="#about">About</a>
-        <a href="#contact">Contact</a>
-      </nav>
-      <div class="header-actions">
-        <span id="authStatus" class="auth-status">Not signed in</span>
-        <button id="loginBtn" class="button button-quiet" type="button">Log in</button>
-        <button id="signupBtn" class="button button-primary" type="button">Create account</button>
-        <button id="logoutBtn" class="button button-quiet hidden" type="button">Log out</button>
+
+  <!-- ================= HEADER ================= -->
+  <header class="site-header">
+    <a href="#" class="brand" id="homeLink">
+      <span class="brand-icon">P</span>
+      <span>Smart<span class="brand-highlight">Park</span></span>
+    </a>
+
+    <nav class="main-nav" id="mainNav">
+      <a href="#dashboard" class="nav-link">Dashboard</a>
+      <a href="#parkingSection" class="nav-link">Parking</a>
+      <a href="#aboutSection" class="nav-link">About</a>
+      <a href="#contactSection" class="nav-link">Contact</a>
+    </nav>
+
+    <div class="header-actions">
+      <button id="loginNavBtn" class="btn btn-outline" type="button">
+        Login
+      </button>
+
+      <button id="signupNavBtn" class="btn btn-primary" type="button">
+        Create Account
+      </button>
+
+      <div id="accountActions" class="account-actions hidden">
+        <span id="headerUserName">User</span>
+        <button id="logoutBtn" class="btn btn-outline" type="button">
+          Logout
+        </button>
       </div>
-      <button id="mobileMenuBtn" class="mobile-menu-button" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button>
-    </header>
+    </div>
+  </header>
 
-    <main>
-      <section id="home" class="hero section-wrap">
-        <div class="hero-copy">
-          <div class="eyebrow"><span class="status-dot"></span> SMART PARKING · SURAT + NAVSARI</div>
-          <h1>Your city.<br><span>Your space.</span><br>Your time back.</h1>
-          <p>Find a free slot, reserve it before you arrive, and enjoy a smoother parking experience with live slot updates.</p>
-          <div class="hero-actions">
-            <a class="button button-primary button-large" href="#parking">Explore parking <span aria-hidden="true">↗</span></a>
-            <a class="button button-outline button-large" href="#how-it-works">How it works</a>
+  <main>
+
+    <!-- ================= HERO ================= -->
+    <section class="hero" id="homeSection">
+      <div class="hero-content">
+        <span class="eyebrow">SMART PARKING • SIMPLIFIED</span>
+
+        <h1>Find your parking.<br>
+          <span class="text-highlight">Save your time.</span>
+        </h1>
+
+        <p>
+          Check live parking availability, reserve your slot,
+          and enjoy a simpler parking experience.
+        </p>
+
+        <div class="hero-actions">
+          <button id="heroParkingBtn" class="btn btn-primary" type="button">
+            Explore Parking
+          </button>
+
+          <button id="heroSignupBtn" class="btn btn-outline" type="button">
+            Get Started
+          </button>
+        </div>
+
+        <div class="hero-features">
+          <span>✓ Live availability</span>
+          <span>✓ Easy reservations</span>
+          <span>✓ Smart gate system</span>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <div class="hero-card-top">
+          <span class="status-dot"></span>
+          <span>Parking Overview</span>
+        </div>
+
+        <div class="hero-stat">
+          <span>Total parking slots</span>
+          <strong id="heroTotalSlots">4</strong>
+        </div>
+
+        <div class="hero-stat">
+          <span>Available slots</span>
+          <strong id="heroAvailableSlots">4</strong>
+        </div>
+
+        <div class="hero-stat">
+          <span>Occupied slots</span>
+          <strong id="heroOccupiedSlots">0</strong>
+        </div>
+
+        <p class="small-note" id="connectionStatus" role="status">
+          Connecting to SmartPark...
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= AUTHENTICATION ================= -->
+    <section id="authSection" class="auth-section hidden">
+      <div class="auth-card">
+
+        <button
+          id="closeAuthBtn"
+          class="close-btn"
+          type="button"
+          aria-label="Close authentication"
+        >×</button>
+
+        <div class="auth-heading">
+          <span class="brand-icon">P</span>
+          <h2 id="authTitle">Welcome Back</h2>
+          <p id="authSubtitle">Login to your SmartPark account.</p>
+        </div>
+
+        <div id="authError" class="message message-error hidden"
+             role="alert"></div>
+
+        <div id="authSuccess" class="message message-success hidden"
+             role="status"></div>
+
+        <form id="authForm">
+
+          <div id="nameField" class="form-group hidden">
+            <label for="fullName">Full Name</label>
+            <input
+              type="text"
+              id="fullName"
+              name="fullName"
+              placeholder="Enter your full name"
+              autocomplete="name"
+            >
           </div>
-          <div class="hero-proof">
-            <span class="proof-icon" aria-hidden="true">⌁</span>
-            <span><strong>Live parking status</strong><small>Connected to the SmartPark database</small></span>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            >
           </div>
-        </div>
-        <div class="hero-visual" aria-label="Illustration of a smart parking system">
-          <div class="visual-orbit orbit-one"></div>
-          <div class="visual-orbit orbit-two"></div>
-          <div class="visual-label label-top"><span class="status-dot"></span> LIVE SYSTEM</div>
-          <div class="parking-illustration">
-            <div class="parking-sign">P</div>
-            <div class="road-line"></div>
-            <div class="car car-one"><span class="car-window"></span><span class="car-wheel wheel-left"></span><span class="car-wheel wheel-right"></span></div>
-            <div class="car car-two"><span class="car-window"></span><span class="car-wheel wheel-left"></span><span class="car-wheel wheel-right"></span></div>
-            <div class="slot-mark slot-mark-one"><span>01</span></div>
-            <div class="slot-mark slot-mark-two"><span>02</span></div>
-            <div class="scan-ring"></div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+
+            <div class="password-wrapper">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                minlength="6"
+                required
+              >
+
+              <button
+                id="togglePasswordBtn"
+                class="password-toggle"
+                type="button"
+                aria-label="Show password"
+              >Show</button>
+            </div>
           </div>
-          <div class="visual-label label-bottom"><span class="signal-bars">▂ ▅ ▇</span> SMART ACCESS</div>
-          <div class="floating-chip chip-top"><span class="chip-icon">⌖</span><span><strong>2 cities</strong><small>One simple system</small></span></div>
-          <div class="floating-chip chip-bottom"><span class="chip-icon">✓</span><span><strong>Quick booking</strong><small>Less time searching</small></span></div>
+
+          <button
+            id="authSubmitBtn"
+            class="btn btn-primary btn-full"
+            type="submit"
+          >
+            Login
+          </button>
+        </form>
+
+        <p class="auth-switch">
+          <span id="authSwitchText">Don't have an account?</span>
+          <button id="authSwitchBtn" class="text-button" type="button">
+            Create Account
+          </button>
+        </p>
+
+        <button id="forgotPasswordBtn" class="text-button" type="button">
+          Forgot Password?
+        </button>
+
+      </div>
+    </section>
+
+    <!-- ================= DASHBOARD ================= -->
+    <section id="dashboard" class="dashboard-section">
+      <div class="section-heading">
+        <span class="eyebrow">YOUR PARKING SPACE</span>
+        <h2>Parking Dashboard</h2>
+        <p>Choose a city to check its parking availability.</p>
+      </div>
+
+      <div id="welcomePanel" class="welcome-panel hidden">
+        <div>
+          <span class="muted-text">Welcome back,</span>
+          <h3 id="welcomeUserName">User</h3>
+          <p id="userTypeLabel">SmartPark User</p>
         </div>
-      </section>
 
-      <section class="metrics-strip section-wrap" aria-label="Parking overview">
-        <div class="metric-intro"><span class="eyebrow">PARKING OVERVIEW</span><strong>Small steps.<br>Smarter cities.</strong></div>
-        <div class="metric"><span class="metric-icon">⌖</span><span class="metric-value" id="cityCount">2</span><span class="metric-label">Connected cities</span></div>
-        <div class="metric"><span class="metric-icon">▤</span><span class="metric-value" id="totalSlotsAll">4</span><span class="metric-label">Total parking slots</span></div>
-        <div class="metric"><span class="metric-icon">◉</span><span class="metric-value" id="availableAll">—</span><span class="metric-label">Slots available now</span></div>
-        <div class="metric-live"><span class="status-dot"></span><span><strong id="connectionStatus">Connecting</strong><small>Realtime status</small></span></div>
-      </section>
+        <button id="profileBtn" class="btn btn-outline" type="button">
+          My Account
+        </button>
+      </div>
 
-      <section id="parking" class="parking-section section-wrap">
-        <div class="section-heading">
-          <div><span class="eyebrow">CHOOSE YOUR DESTINATION</span><h2>Parking, without the guesswork.</h2><p>Choose a city to view its parking slots and current availability.</p></div>
-          <div class="live-pill"><span class="status-dot"></span> Live updates</div>
-        </div>
+      <div class="city-selector">
+        <button
+          class="city-btn active"
+          id="suratBtn"
+          data-city="surat"
+          type="button"
+          aria-pressed="true"
+        >
+          <span class="city-symbol">S</span>
+          <span>
+            <strong>Surat</strong>
+            <small>2 parking slots</small>
+          </span>
+        </button>
 
-        <div class="city-tabs" role="group" aria-label="Choose city">
-          <button class="city-tab active" id="citySuratBtn" type="button" data-city="surat" aria-pressed="true"><span class="city-tab-icon">S</span><span><strong>Surat</strong><small>Gujarat, India</small></span><span class="tab-arrow">↗</span></button>
-          <button class="city-tab" id="cityNavsariBtn" type="button" data-city="navsari" aria-pressed="false"><span class="city-tab-icon">N</span><span><strong>Navsari</strong><small>Gujarat, India</small></span><span class="tab-arrow">↗</span></button>
-        </div>
+        <button
+          class="city-btn"
+          id="navsariBtn"
+          data-city="navsari"
+          type="button"
+          aria-pressed="false"
+        >
+          <span class="city-symbol">N</span>
+          <span>
+            <strong>Navsari</strong>
+            <small>2 parking slots</small>
+          </span>
+        </button>
+      </div>
 
-        <div class="city-summary">
-          <div><span class="eyebrow">CURRENT LOCATION</span><h3 id="selectedCityName">Surat</h3><p id="cityLiveMessage" aria-live="polite">Waiting for live parking data…</p></div>
-          <div class="city-stats">
-            <div><span id="cityAvailable">—</span><small>Available</small></div>
-            <div><span id="cityReserved">—</span><small>Reserved</small></div>
-            <div><span id="cityOccupied">—</span><small>Occupied</small></div>
-            <div><span id="cityTotal">2</span><small>Total slots</small></div>
+      <section id="parkingSection" class="parking-section">
+        <div class="parking-heading">
+          <div>
+            <span class="eyebrow">LIVE PARKING</span>
+            <h3 id="selectedCityName">Surat Parking</h3>
           </div>
+
+          <span id="parkingLiveStatus" class="status-badge">
+            Connecting...
+          </span>
         </div>
 
-        <div id="parkingSlots" class="slot-grid" aria-live="polite">
-          <article class="slot-card slot-loading"><div class="slot-card-top"><span class="slot-number">SLOT 01</span><span class="slot-status">Loading</span></div><div class="slot-symbol">P</div><h3>Loading slot data</h3><p>Connecting to the live parking database…</p></article>
-          <article class="slot-card slot-loading"><div class="slot-card-top"><span class="slot-number">SLOT 02</span><span class="slot-status">Loading</span></div><div class="slot-symbol">P</div><h3>Loading slot data</h3><p>Connecting to the live parking database…</p></article>
-        </div>
+        <div id="parkingError" class="message message-error hidden"
+             role="alert"></div>
 
-        <div class="parking-note"><span class="note-icon">i</span><p>Availability is based on the latest data received from the system. Please wait for a live connection before relying on a slot's status.</p></div>
-      </section>
-
-      <section class="entry-section section-wrap">
-        <div class="section-heading"><div><span class="eyebrow">TWO WAYS TO ENTER</span><h2>Your arrival, your way.</h2><p>Local drivers can check for space at the gate. Reserved users can request entry for a valid booking.</p></div></div>
-        <div class="entry-cards">
-          <article class="entry-card local-entry">
-            <div class="entry-card-icon">⌁</div><span class="entry-kicker">NO BOOKING NEEDED</span><h3>Local entry</h3><p>Arriving without a reservation? The ultrasonic sensor detects a vehicle near the gate. The gate should open only when the selected city has an available slot.</p>
-            <div class="entry-detail"><span class="status-dot"></span><span>Vehicle detection threshold: <strong>10 cm</strong></span></div>
+        <div class="parking-summary">
+          <article class="summary-card">
+            <span>Total</span>
+            <strong id="totalSlots">2</strong>
           </article>
-          <article class="entry-card reserved-entry">
-            <div class="entry-card-icon">▣</div><span class="entry-kicker">FOR RESERVED USERS</span><h3>Reserved entry</h3><p>Sign in, book a slot, complete the demo payment, and use your active reservation to request gate entry.</p>
-            <button id="myBookingsBtn" class="button button-outline" type="button">View my bookings <span aria-hidden="true">↗</span></button>
+
+          <article class="summary-card available-summary">
+            <span>Available</span>
+            <strong id="availableSlots">2</strong>
+          </article>
+
+          <article class="summary-card reserved-summary">
+            <span>Reserved</span>
+            <strong id="reservedSlots">0</strong>
+          </article>
+
+          <article class="summary-card occupied-summary">
+            <span>Occupied</span>
+            <strong id="occupiedSlots">0</strong>
           </article>
         </div>
+
+        <div id="slotsContainer" class="slots-grid">
+
+          <!-- Slot cards are created by script.js from Firebase data. -->
+
+          <div class="slot-placeholder">
+            <span class="loader"></span>
+            <p>Loading parking slots...</p>
+          </div>
+
+        </div>
+
+        <div class="slot-legend">
+          <span><i class="legend-dot available-dot"></i> Available</span>
+          <span><i class="legend-dot reserved-dot"></i> Reserved</span>
+          <span><i class="legend-dot occupied-dot"></i> Occupied</span>
+        </div>
+
+        <p id="parkingUpdatedAt" class="small-note">
+          Waiting for live parking data...
+        </p>
       </section>
 
-      <section id="how-it-works" class="how-section section-wrap">
-        <div class="section-heading"><div><span class="eyebrow">SIMPLE BY DESIGN</span><h2>From search to parked.</h2><p>A clearer parking experience in a few easy steps.</p></div></div>
-        <div class="steps-grid">
-          <article class="step-card"><span class="step-number">01</span><div class="step-icon">⌖</div><h3>Choose a city</h3><p>Select Surat or Navsari and check the latest slot availability.</p></article>
-          <article class="step-card"><span class="step-number">02</span><div class="step-icon">▤</div><h3>Reserve a slot</h3><p>Sign in and choose an available slot for your visit.</p></article>
-          <article class="step-card"><span class="step-number">03</span><div class="step-icon">₹</div><h3>Demo payment</h3><p>Complete the project demo payment flow. No real money is charged.</p></article>
-          <article class="step-card"><span class="step-number">04</span><div class="step-icon">↗</div><h3>Request entry</h3><p>Use your valid booking to request reserved entry at the gate.</p></article>
+      <!-- ================= MY BOOKINGS ================= -->
+      <section id="myBookingsSection" class="subsection">
+        <div class="subsection-heading">
+          <div>
+            <span class="eyebrow">RESERVATIONS</span>
+            <h3>My Bookings</h3>
+          </div>
+
+          <button id="refreshBookingsBtn" class="btn btn-outline" type="button">
+            Refresh
+          </button>
+        </div>
+
+        <div id="myBookingsContainer" class="bookings-container">
+          <div class="empty-state">
+            <p>Login to view your bookings.</p>
+          </div>
         </div>
       </section>
 
-      <section id="about" class="about-section section-wrap">
-        <div class="about-panel"><div class="about-art"><div class="about-grid"></div><div class="about-p">P</div><span class="about-orbit"></span><span class="about-caption">CONNECTED PARKING</span></div><div class="about-copy"><span class="eyebrow">ABOUT SMARTPARK</span><h2>Less circling.<br><span>More living.</span></h2><p>SMARTPARK is a smart parking project designed to connect a simple website, a live database, and an ESP32-based gate prototype. It brings slot monitoring and reservation workflows together for Surat and Navsari.</p><div class="about-tags"><span>ESP32 + Sensors</span><span>Firebase Realtime Database</span><span>Mobile-friendly website</span></div></div></div>
+      <!-- ================= DEMO PAYMENTS ================= -->
+      <section id="myPaymentsSection" class="subsection">
+        <div class="subsection-heading">
+          <div>
+            <span class="eyebrow">PAYMENT HISTORY</span>
+            <h3>My Payments</h3>
+          </div>
+        </div>
+
+        <div id="myPaymentsContainer" class="payments-container">
+          <div class="empty-state">
+            <p>Login to view your payment history.</p>
+          </div>
+        </div>
       </section>
 
-      <section id="contact" class="contact-section section-wrap">
-        <div><span class="eyebrow">NEED A HAND?</span><h2>Let's make parking simpler.</h2><p>Questions about using the demo? Get in touch with the project team.</p></div>
-        <a class="button button-primary button-large" href="mailto:smartpark.support@example.com">Contact the team <span aria-hidden="true">↗</span></a>
-      </section>
-    </main>
+    </section>
 
-    <footer class="site-footer"><a class="brand footer-brand" href="#home"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span><span>SMART<span class="brand-accent">PARK</span><small>SMART CITY PARKING</small></span></a><p>Smarter parking starts with a better connection.</p><span>© <span id="currentYear">2026</span> SMARTPARK · College project demo</span></footer>
+    <!-- ================= GATE STATUS ================= -->
+    <section id="gateSection" class="gate-section">
+      <div class="section-heading">
+        <span class="eyebrow">SMART ENTRY</span>
+        <h2>Automatic Gate Status</h2>
+        <p>
+          The ESP32 controls the physical gate and synchronizes its
+          status with Firebase.
+        </p>
+      </div>
+
+      <div class="gate-card">
+        <div class="gate-icon" aria-hidden="true">P</div>
+
+        <div class="gate-information">
+          <h3 id="gateCityName">Surat Gate</h3>
+          <p id="gateStatusText">Waiting for ESP32 data...</p>
+          <p class="small-note">
+            Ultrasonic entry detection threshold: 10 cm
+          </p>
+        </div>
+
+        <span id="gateStatusBadge" class="status-badge">
+          UNKNOWN
+        </span>
+      </div>
+    </section>
+
+    <!-- ================= ADMIN ================= -->
+    <section id="adminSection" class="admin-section hidden">
+      <div class="section-heading">
+        <span class="eyebrow">ADMINISTRATION</span>
+        <h2>Admin Dashboard</h2>
+        <p>Monitor SmartPark operations.</p>
+      </div>
+
+      <div id="adminMessage" class="message hidden" role="status"></div>
+
+      <div class="admin-summary">
+        <article class="summary-card">
+          <span>Registered Users</span>
+          <strong id="adminUserCount">0</strong>
+        </article>
+
+        <article class="summary-card">
+          <span>Total Bookings</span>
+          <strong id="adminBookingCount">0</strong>
+        </article>
+
+        <article class="summary-card">
+          <span>Payment Records</span>
+          <strong id="adminPaymentCount">0</strong>
+        </article>
+      </div>
+
+      <div class="subsection">
+        <h3>All Bookings</h3>
+        <div id="adminBookingsContainer" class="table-container">
+          <p>Admin data will appear after authorization.</p>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>All Payment Records</h3>
+        <div id="adminPaymentsContainer" class="table-container">
+          <p>Admin data will appear after authorization.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PROFILE ================= -->
+    <section id="profileSection" class="profile-section hidden">
+      <div class="section-heading">
+        <span class="eyebrow">ACCOUNT SETTINGS</span>
+        <h2>My Account</h2>
+      </div>
+
+      <div class="profile-card">
+        <div class="form-group">
+          <label for="profileName">Full Name</label>
+          <input id="profileName" type="text" autocomplete="name">
+        </div>
+
+        <div class="form-group">
+          <label for="profileEmail">Email Address</label>
+          <input id="profileEmail" type="email" disabled>
+        </div>
+
+        <div class="form-group">
+          <label for="profileUserType">Account Type</label>
+          <input id="profileUserType" type="text" disabled>
+        </div>
+
+        <button id="saveProfileBtn" class="btn btn-primary" type="button">
+          Save Profile
+        </button>
+
+        <button id="closeProfileBtn" class="btn btn-outline" type="button">
+          Close
+        </button>
+
+        <div id="profileMessage" class="message hidden" role="status"></div>
+      </div>
+    </section>
+
+    <!-- ================= ABOUT ================= -->
+    <section id="aboutSection" class="information-section">
+      <div class="section-heading">
+        <span class="eyebrow">ABOUT SMARTPARK</span>
+        <h2>Parking made simpler</h2>
+        <p>
+          SmartPark combines a live parking dashboard, online reservations,
+          demo payments, and an ESP32-based automatic gate prototype.
+        </p>
+      </div>
+
+      <div class="information-grid">
+        <article class="information-card">
+          <h3>Live Availability</h3>
+          <p>View parking information for Surat and Navsari.</p>
+        </article>
+
+        <article class="information-card">
+          <h3>Easy Reservations</h3>
+          <p>Reserve a free parking slot using your account.</p>
+        </article>
+
+        <article class="information-card">
+          <h3>Smart Gate</h3>
+          <p>Vehicle detection uses a 10 cm ultrasonic threshold.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ================= CONTACT ================= -->
+    <section id="contactSection" class="information-section">
+      <div class="section-heading">
+        <span class="eyebrow">CONTACT</span>
+        <h2>Get in touch</h2>
+        <p>
+          SmartPark is a college project demonstrating smart parking
+          and automatic gate control.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= BOOKING MODAL ================= -->
+  <div id="bookingModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="bookingModal"></div>
+
+    <section
+      class="modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bookingTitle"
+    >
+      <button
+        class="close-btn"
+        type="button"
+        data-close-modal="bookingModal"
+        aria-label="Close booking"
+      >×</button>
+
+      <span class="eyebrow">PARKING RESERVATION</span>
+      <h2 id="bookingTitle">Reserve Your Slot</h2>
+
+      <p id="bookingCityLabel">City: Surat</p>
+      <p id="bookingSlotLabel">Slot: Slot 1</p>
+
+      <div class="booking-details">
+        <div class="form-group">
+          <label for="bookingStart">Booking Start</label>
+          <input id="bookingStart" type="datetime-local" required>
+        </div>
+
+        <div class="form-group">
+          <label for="bookingEnd">Booking End</label>
+          <input id="bookingEnd" type="datetime-local" required>
+        </div>
+
+        <div class="form-group">
+          <label for="bookingAmount">Demo Booking Amount (₹)</label>
+          <input id="bookingAmount" type="number" value="100" min="1" disabled>
+        </div>
+      </div>
+
+      <p class="small-note">
+        Demo payment only. No real money will be charged.
+      </p>
+
+      <div id="bookingMessage" class="message hidden" role="status"></div>
+
+      <button id="continuePaymentBtn" class="btn btn-primary btn-full"
+              type="button">
+        Continue to Demo Payment
+      </button>
+
+      <button class="btn btn-outline btn-full" type="button"
+              data-close-modal="bookingModal">
+        Cancel
+      </button>
+    </section>
   </div>
 
-  <div id="toastRegion" class="toast-region" role="status" aria-live="polite"></div>
+  <!-- ================= PAYMENT MODAL ================= -->
+  <div id="paymentModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal="paymentModal"></div>
 
-  <!-- Login / create-account dialog -->
-  <dialog id="authModal" class="app-modal">
-    <form id="authForm" class="modal-content">
-      <button class="modal-close" type="button" data-close-modal="authModal" aria-label="Close">×</button>
-      <span class="eyebrow">WELCOME TO SMARTPARK</span><h2 id="authModalTitle">Welcome back.</h2><p id="authModalDescription">Log in to manage your parking reservations.</p>
-      <div id="authNameField" class="form-field hidden"><label for="authName">Full name</label><input id="authName" name="name" type="text" autocomplete="name" placeholder="Your full name"></div>
-      <div class="form-field"><label for="authEmail">Email address</label><input id="authEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required></div>
-      <div class="form-field"><label for="authPassword">Password</label><input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters" required></div>
-      <p id="authError" class="form-message" aria-live="polite"></p>
-      <button id="authSubmitBtn" class="button button-primary button-full" type="submit">Log in</button>
-      <p class="modal-switch"><span id="authSwitchText">New to SmartPark?</span> <button id="authSwitchBtn" type="button">Create account</button></p>
-    </form>
-  </dialog>
+    <section
+      class="modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="paymentTitle"
+    >
+      <button
+        class="close-btn"
+        type="button"
+        data-close-modal="paymentModal"
+        aria-label="Close payment"
+      >×</button>
 
-  <!-- Booking dialog -->
-  <dialog id="bookingModal" class="app-modal">
-    <form id="bookingForm" class="modal-content">
-      <button class="modal-close" type="button" data-close-modal="bookingModal" aria-label="Close">×</button>
-      <span class="eyebrow">RESERVE YOUR SPACE</span><h2>Make it yours.</h2><p>Review your slot and reservation time.</p>
-      <div class="booking-summary"><span>Selected location</span><strong id="bookingCityLabel">Surat</strong><span>Selected parking slot</span><strong id="bookingSlotLabel">Slot 1</strong></div>
-      <input id="bookingCity" type="hidden" name="city" value="surat"><input id="bookingSlot" type="hidden" name="slotId" value="slot1">
-      <div class="form-field"><label for="bookingStart">Reservation start</label><input id="bookingStart" name="bookingStart" type="datetime-local" required></div>
-      <div class="form-field"><label for="bookingEnd">Reservation end</label><input id="bookingEnd" name="bookingEnd" type="datetime-local" required></div>
-      <div class="demo-payment-note"><span>₹</span><div><strong>Demo payment only</strong><small>No real money will be charged.</small></div></div>
-      <p id="bookingError" class="form-message" aria-live="polite"></p>
-      <button id="bookingContinueBtn" class="button button-primary button-full" type="submit">Continue to demo payment</button>
-    </form>
-  </dialog>
+      <span class="eyebrow">DEMO CHECKOUT</span>
+      <h2 id="paymentTitle">Confirm Demo Payment</h2>
 
-  <!-- Demo payment dialog -->
-  <dialog id="paymentModal" class="app-modal">
-    <form id="paymentForm" class="modal-content">
-      <button class="modal-close" type="button" data-close-modal="paymentModal" aria-label="Close">×</button>
-      <span class="eyebrow">PROJECT DEMO CHECKOUT</span><h2>Demo payment.</h2><p>This is a simulation for your college project. No payment provider is contacted and no real money is taken.</p>
-      <div class="payment-total"><span>Demo amount</span><strong id="paymentAmount">₹50.00</strong></div>
-      <div class="form-field"><label for="paymentMethod">Demo payment method</label><select id="paymentMethod" name="paymentMethod" required><option value="demo_upi">Demo UPI</option><option value="demo_card">Demo card</option><option value="demo_cashless">Demo wallet</option></select></div>
-      <label class="demo-confirm"><input id="demoPaymentConfirm" type="checkbox" required><span>I understand this is a simulated payment, not a real transaction.</span></label>
-      <p id="paymentError" class="form-message" aria-live="polite"></p>
-      <button id="completeDemoPaymentBtn" class="button button-primary button-full" type="submit">Complete demo payment</button>
-    </form>
-  </dialog>
+      <p id="paymentSummary">Your reservation details will appear here.</p>
 
-  <!-- My bookings dialog -->
-  <dialog id="bookingsModal" class="app-modal app-modal-wide">
-    <div class="modal-content">
-      <button class="modal-close" type="button" data-close-modal="bookingsModal" aria-label="Close">×</button>
-      <span class="eyebrow">YOUR SMARTPARK ACCOUNT</span><h2>My bookings.</h2><p>View your reservations, payment status and reserved-entry options.</p>
-      <div id="myBookingsList" class="my-bookings-list"><p class="empty-state">Sign in to view your bookings.</p></div>
-      <p id="bookingsMessage" class="form-message" aria-live="polite"></p>
-    </div>
-  </dialog>
+      <div class="payment-notice">
+        <strong>College project demonstration</strong>
+        <p>No card details are needed. No real payment will be processed.</p>
+      </div>
+
+      <div id="paymentMessage" class="message hidden" role="status"></div>
+
+      <button id="confirmDemoPaymentBtn"
+              class="btn btn-primary btn-full" type="button">
+        Confirm Demo Payment
+      </button>
+
+      <button class="btn btn-outline btn-full" type="button"
+              data-close-modal="paymentModal">
+        Cancel
+      </button>
+    </section>
+  </div>
+
+  <!-- ================= NOTIFICATIONS ================= -->
+  <div id="toastContainer" class="toast-container"
+       aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="site-footer">
+    <a href="#" class="brand">
+      <span class="brand-icon">P</span>
+      <span>Smart<span class="brand-highlight">Park</span></span>
+    </a>
+
+    <p>Smart parking for a smarter tomorrow.</p>
+    <p>© <span id="currentYear">2026</span> SmartPark. College project.</p>
+  </footer>
+
 </body>
 </html>
+```
